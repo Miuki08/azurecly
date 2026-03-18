@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -58,6 +58,24 @@ class User extends Authenticatable
 
     public function getJWTCustomClaims()
     {
-        return [];
+        return [
+            'role' => $this->role,
+            'name' => $this->name
+        ];
+    }
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class, 'Created');
+    }
+
+    public function contacts()
+    {
+        return $this->hasMany(Contact::class, 'Created');
+    }
+
+    public function escalations()
+    {
+        return $this->hasMany(EscalationLog::class, 'Escalated');
     }
 }

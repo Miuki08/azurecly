@@ -11,7 +11,7 @@ class Ticket extends Model
 
     protected $fillable = [
         'Title', 'Description', 'Sentiment', 'Actor', 'Category', 
-        'Priority', 'Tag', 'Location', 'Latitude', 'Longitude',
+        'Priority', 'Tag', 'Region', 'Location', 'Latitude', 'Longitude',
         'ViewCount', 'PublishedDate', 'escalatedDate', 'Created'
     ];
 
@@ -27,6 +27,37 @@ class Ticket extends Model
 
     public function escalations()
     {
-        return $this->hasMany(EscalationLog::class);
+        return $this->hasMany(EscalationLog::class, 'ticketId');
     }
+
+    public function scopeSentiment($query, $Sentiment)
+    {
+        if ($Sentiment) {
+            return $query->where('Sentiment', $Sentiment);
+        }
+        return $query;
+    }
+
+    public function scopePriority($query, $Priority)
+    {
+        if ($Priority) {
+            return $query->where('Priority', $Priority);
+        }
+        return $query;
+    }
+
+    public function scopeCategory($query, $Category)
+    {
+        if ($Category) {
+            return $query->where('Category', $Category);
+        }
+        return $query;
+    }
+        
+    public function scopeHighPriorityNegative($query)
+    {
+        return $query->where('Priority', 'high')
+                     ->where('Sentiment', 'negative');
+    }
+
 }
