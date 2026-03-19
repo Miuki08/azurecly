@@ -1,3 +1,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+input:focus ~ .absolute svg {
+    color: #0A6E74;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none; 
+    scrollbar-width: none;    
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;            
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+    background: #0A6E74;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #4AA3A2;
+}

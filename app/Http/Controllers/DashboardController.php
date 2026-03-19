@@ -2,9 +2,64 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ticket;
+use App\Models\Contact;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    //
+    public function index()
+    {
+        // Statistik untuk dashboard
+        $stats = [
+            'total_berita' => Ticket::count(),
+            'berita_hari_ini' => Ticket::whereDate('PublishedDate', today())->count(),
+            'positive_sentiment' => Ticket::where('Sentiment', 'positive')->count(),
+            'negative_sentiment' => Ticket::where('Sentiment', 'negative')->count(),
+            'high_priority' => Ticket::where('Priority', 'high')->count(),
+        ];
+
+        // Data untuk maps (hanya yang punya lokasi)
+        $maps_data = Ticket::whereNotNull('Latitude')
+                          ->whereNotNull('Longitude')
+                          ->whereNotNull('Location')
+                          ->orderBy('PublishedDate', 'desc')
+                          ->limit(50)
+                          ->get(['id', 'Title', 'Sentiment', 'Priority', 
+                                'Location', 'Latitude', 'Longitude', 'PublishedDate']);
+
+        // Kategori terpopuler
+        $popular_categories = Ticket::select('Category')
+            ->selectRaw('count(*) as total')
+            ->groupBy('Category')
+            ->orderBy('total', 'desc')
+            ->limit(5)
+            ->get();
+
+        // High priority dengan negative sentiment
+        $high_priority_negative = Ticket::where('Priority', 'high')
+            ->where('Sentiment', 'negative')
+            ->orderBy('PublishedDate', 'desc')
+            ->limit(5)
+            ->get(['id', 'Title', 'Description', 'Location', 'PublishedDate']);
+
+        return view('dashboard.index', compact(
+            'stats', 'maps_data', 'popular_categories', 'high_priority_negative'
+        ));
+    }
+
+    public function getMapData()
+    {
+        $tickets = Ticket::whereNotNull('Latitude')
+                        ->whereNotNull('Longitude')
+                        ->orderBy('PublishedDate', 'desc')
+                        ->limit(100)
+                        ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $tickets
+        ]);
+    }
 }
