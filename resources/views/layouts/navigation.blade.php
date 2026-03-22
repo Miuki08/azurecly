@@ -5,7 +5,14 @@
             <div class="flex">
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" class="flex items-center">
-                        <img src="{{ asset('images/azurecly-logo.png') }}" alt="Azurecly" class="h-24 w-24">
+                        <div class="h-14 w-24 overflow-hidden rounded-md">  {{-- Container dengan fixed size --}}
+                            <img 
+                                src="{{ asset('images/azurecly-logo.png') }}" 
+                                alt="Azurecly" 
+                                class="w-full h-full object-cover object-center"
+                                style="object-position: 50% 45%;"  {{-- Crop di posisi 45% (sedikit crop atas & bawah) --}}
+                            >
+                        </div>
                     </a>
                 </div>
 
