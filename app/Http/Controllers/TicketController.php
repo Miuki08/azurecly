@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
+use App\Models\Category;
+use App\Models\Region;
 use App\Http\Resources\TicketResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,13 +30,13 @@ class TicketController extends Controller
         }
 
         // Filter by category
-        if ($request->has('category')) {
-            $query->where('Category', $request->category);    
+        if ($request->filled('category')) {
+            $query->where('CategoryId', $request->category);
         }
 
-        // Filter by region (NEW)
-        if ($request->has('region')) {
-            $query->where('Region', 'LIKE', "%{$request->region}%");
+        // Filter by region
+        if ($request->filled('region')) {
+            $query->where('RegionId', $request->region);
         }
 
         // Filter high priority negative
@@ -105,10 +107,15 @@ class TicketController extends Controller
         }
         
         // Filter by category
-        if ($request->has('category') && $request->category) {
-            $query->where('Category', 'LIKE', "%{$request->category}%");
+        if ($request->filled('category')) {
+            $query->where('CategoryId', $request->category);
         }
-        
+
+        // Filter by region
+        if ($request->filled('region')) {
+            $query->where('RegionId', $request->region);
+        }
+            
         // Search by title or description
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -120,8 +127,11 @@ class TicketController extends Controller
         }
         
         $tickets = $query->orderBy('Created', 'desc')->paginate(15);
+
+        $categories = Category::orderBy('Name')->get();
+        $regions    = Region::orderBy('Name')->get();
         
-        return view('tickets.index', compact('tickets'));
+        return view('tickets.index', compact('tickets', 'categories', 'regions'));
     }
     
     /**
@@ -129,7 +139,10 @@ class TicketController extends Controller
      */
     public function createWeb()
     {
-        return view('tickets.create');
+        $categories = Category::orderBy('Name')->get();
+        $regions    = Region::orderBy('Name')->get();
+
+        return view('tickets.create', compact('categories', 'regions'));
     }
     
     /**
@@ -138,45 +151,52 @@ class TicketController extends Controller
     public function storeWeb(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'sentiment' => 'required|in:positive,neutral,negative',
-            'actor' => 'nullable|string|max:255',
-            'category' => 'required|string|max:100',
-            'priority' => 'required|in:high,medium,low',
-            'tag' => 'nullable|string|max:100',
-            'region' => 'nullable|string|max:100',
-            'location' => 'nullable|string|max:255',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
+            'title'        => 'required|string|max:255',
+            'description'  => 'required|string',
+            'sentiment'    => 'required|in:positive,neutral,negative',
+            'actor'        => 'nullable|string|max:255',
+            'category'     => 'required|exists:categories,id',
+            'priority'     => 'required|in:high,medium,low',
+            'tag'          => 'nullable|string|max:100',
+            'region'       => 'nullable|exists:regions,id',
+            'location'     => 'nullable|string|max:255',
+            'latitude'     => 'nullable|numeric',
+            'longitude'    => 'nullable|numeric',
             'published_at' => 'nullable|date',
+            'image'        => 'nullable|image|max:2048',
         ]);
-        
-        $validated['Title'] = $validated['title'];
-        $validated['Description'] = $validated['description'];
-        $validated['Sentiment'] = $validated['sentiment'];
-        $validated['Actor'] = $validated['actor'] ?? null;
-        $validated['Category'] = $validated['category'];
-        $validated['Priority'] = $validated['priority'];
-        $validated['Tag'] = $validated['tag'] ?? null;
-        $validated['Region'] = $validated['region'] ?? null;
-        $validated['Location'] = $validated['location'] ?? null;
-        $validated['Latitude'] = $validated['latitude'] ?? null;
-        $validated['Longitude'] = $validated['longitude'] ?? null;
-        $validated['PublishedDate'] = $validated['published_at'] ?? null;
-        $validated['Created'] = Auth::id();
-        $validated['ViewCount'] = 0;
-        
-        // Hapus key dengan format camelCase
-        unset($validated['title'], $validated['description'], $validated['sentiment'], 
-              $validated['actor'], $validated['category'], $validated['priority'], 
-              $validated['tag'], $validated['region'], $validated['location'], 
-              $validated['latitude'], $validated['longitude'], $validated['published_at']);
-        
-        Ticket::create($validated);
-        
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('tickets', 'public');
+        }
+
+        $category = Category::find($validated['category']);
+        $region   = $validated['region'] ? Region::find($validated['region']) : null;
+
+        Ticket::create([
+            'Title'         => $validated['title'],
+            'Description'   => $validated['description'],
+            'Sentiment'     => $validated['sentiment'],
+            'Actor'         => $validated['actor'] ?? null,
+            'CategoryId'    => $validated['category'],
+            'Category'      => $category?->Name,   
+            'Priority'      => $validated['priority'],
+            'Tag'           => $validated['tag'] ?? null,
+            'RegionId'      => $validated['region'] ?? null,
+            'Region'        => $region?->Name,
+            'Location'      => $validated['location'] ?? null,
+            'Latitude'      => $validated['latitude'] ?? null,
+            'Longitude'     => $validated['longitude'] ?? null,
+            'PublishedDate' => $validated['published_at'] ?? null,
+            'Created'       => Auth::id(),
+            'ViewCount'     => 0,
+            'Image'         => $imagePath,
+        ]);
+
         return redirect()->route('tickets.index')->with('success', 'Berita berhasil ditambahkan');
     }
+
     
     /**
      * Display the specified ticket (WEB)
@@ -195,7 +215,9 @@ class TicketController extends Controller
     public function editWeb($id)
     {
         $ticket = Ticket::findOrFail($id);
-        return view('tickets.edit', compact('ticket'));
+        $categories = Category::orderBy('Name')->get();
+        $regions    = Region::orderBy('Name')->get();
+        return view('tickets.edit', compact('ticket', 'categories', 'regions'));
     }
     
     /**
@@ -204,45 +226,62 @@ class TicketController extends Controller
     public function updateWeb(Request $request, $id)
     {
         $ticket = Ticket::findOrFail($id);
-        
-        // Authorization check
+
         if ($ticket->Created != Auth::id() && Auth::user()->role !== 'admin') {
             return redirect()->route('tickets.index')->with('error', 'Unauthorized to update this ticket');
         }
-        
+
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'sentiment' => 'required|in:positive,neutral,negative',
-            'actor' => 'nullable|string|max:255',
-            'category' => 'required|string|max:100',
-            'priority' => 'required|in:high,medium,low',
-            'tag' => 'nullable|string|max:100',
-            'region' => 'nullable|string|max:100',
-            'location' => 'nullable|string|max:255',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
+            'title'        => 'required|string|max:255',
+            'description'  => 'required|string',
+            'sentiment'    => 'required|in:positive,neutral,negative',
+            'actor'        => 'nullable|string|max:255',
+            'category'     => 'required|exists:categories,id',
+            'priority'     => 'required|in:high,medium,low',
+            'tag'          => 'nullable|string|max:100',
+            'region'       => 'nullable|exists:regions,id',
+            'location'     => 'nullable|string|max:255',
+            'latitude'     => 'nullable|numeric',
+            'longitude'    => 'nullable|numeric',
             'published_at' => 'nullable|date',
+            'image'        => 'nullable|image|max:2048',
         ]);
-        
+
         $updateData = [];
-        if ($request->has('title')) $updateData['Title'] = $validated['title'];
-        if ($request->has('description')) $updateData['Description'] = $validated['description'];
-        if ($request->has('sentiment')) $updateData['Sentiment'] = $validated['sentiment'];
-        if ($request->has('actor')) $updateData['Actor'] = $validated['actor'];
-        if ($request->has('category')) $updateData['Category'] = $validated['category'];
-        if ($request->has('priority')) $updateData['Priority'] = $validated['priority'];
-        if ($request->has('tag')) $updateData['Tag'] = $validated['tag'];
-        if ($request->has('region')) $updateData['Region'] = $validated['region'];
-        if ($request->has('location')) $updateData['Location'] = $validated['location'];
-        if ($request->has('latitude')) $updateData['Latitude'] = $validated['latitude'];
-        if ($request->has('longitude')) $updateData['Longitude'] = $validated['longitude'];
+
+        if ($request->has('title'))        $updateData['Title']       = $validated['title'];
+        if ($request->has('description'))  $updateData['Description'] = $validated['description'];
+        if ($request->has('sentiment'))    $updateData['Sentiment']   = $validated['sentiment'];
+        if ($request->has('actor'))        $updateData['Actor']       = $validated['actor'];
+        if ($request->has('category'))     $updateData['CategoryId']  = $validated['category'];
+        if ($request->has('priority'))     $updateData['Priority']    = $validated['priority'];
+        if ($request->has('tag'))          $updateData['Tag']         = $validated['tag'];
+        if ($request->has('region'))       $updateData['RegionId']    = $validated['region'];
+        if ($request->has('location'))     $updateData['Location']    = $validated['location'];
+        if ($request->has('latitude'))     $updateData['Latitude']    = $validated['latitude'];
+        if ($request->has('longitude'))    $updateData['Longitude']   = $validated['longitude'];
         if ($request->has('published_at')) $updateData['PublishedDate'] = $validated['published_at'];
-        
+
+        // mapping nama Category/Region (string)
+        if ($request->has('category')) {
+            $category = Category::find($validated['category']);
+            $updateData['Category'] = $category?->Name;
+        }
+        if ($request->has('region')) {
+            $region = $validated['region'] ? Region::find($validated['region']) : null;
+            $updateData['Region'] = $region?->Name;
+        }
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('tickets', 'public');
+            $updateData['Image'] = $imagePath;
+        }
+
         $ticket->update($updateData);
-        
+
         return redirect()->route('tickets.index')->with('success', 'Berita berhasil diupdate');
     }
+
     
     /**
      * Remove the specified ticket (WEB)
@@ -266,56 +305,61 @@ class TicketController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'sentiment' => 'required|in:positive,neutral,negative',
-            'actor' => 'nullable|string|max:255',
-            'category' => 'required|string|max:100',
-            'priority' => 'required|in:high,medium,low',
-            'tag' => 'nullable|string|max:100',
-            'region' => 'nullable|string|max:100',       
-            'location' => 'nullable|string|max:255',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
+            'title'        => 'required|string|max:255',
+            'description'  => 'required|string',
+            'sentiment'    => 'required|in:positive,neutral,negative',
+            'actor'        => 'nullable|string|max:255',
+            'category'     => 'required|exists:categories,id',
+            'priority'     => 'required|in:high,medium,low',
+            'tag'          => 'nullable|string|max:100',
+            'region'       => 'nullable|exists:regions,id',
+            'location'     => 'nullable|string|max:255',
+            'latitude'     => 'nullable|numeric',
+            'longitude'    => 'nullable|numeric',
             'published_at' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
         try {
+            $category = Category::find($request->category);
+            $region   = $request->region ? Region::find($request->region) : null;
+
             $ticket = Ticket::create([
-                'Title' => $request->title,                 
-                'Description' => $request->description,     
-                'Sentiment' => $request->sentiment,         
-                'Actor' => $request->actor,                 
-                'Category' => $request->category,           
-                'Priority' => $request->priority,           
-                'Tag' => $request->tag,                     
-                'Region' => $request->region,                
-                'Location' => $request->location,           
-                'Latitude' => $request->latitude,           
-                'Longitude' => $request->longitude,         
-                'PublishedDate' => $request->published_at,  
-                'Created' => Auth::id(),                     
-                'ViewCount' => 0,                            
+                'Title'         => $request->title,
+                'Description'   => $request->description,
+                'Sentiment'     => $request->sentiment,
+                'Actor'         => $request->actor,
+                'CategoryId'    => $request->category,
+                'Category'      => $category?->Name,
+                'Priority'      => $request->priority,
+                'Tag'           => $request->tag,
+                'RegionId'      => $request->region,
+                'Region'        => $region?->Name,
+                'Location'      => $request->location,
+                'Latitude'      => $request->latitude,
+                'Longitude'     => $request->longitude,
+                'PublishedDate' => $request->published_at,
+                'Created'       => Auth::id(),
+                'ViewCount'     => 0,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Ticket created successfully',
-                'data' => new TicketResource($ticket->load('creator'))
+                'data'    => new TicketResource($ticket->load('creator')),
             ], 201);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create ticket',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -359,17 +403,17 @@ class TicketController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'title' => 'sometimes|string|max:255',
-                'description' => 'sometimes|string',
-                'sentiment' => 'sometimes|in:positive,neutral,negative',
-                'actor' => 'nullable|string|max:255',
-                'category' => 'sometimes|string|max:100',
-                'priority' => 'sometimes|in:high,medium,low',
-                'tag' => 'nullable|string|max:100',
-                'region' => 'nullable|string|max:100',
-                'location' => 'nullable|string|max:255',
-                'latitude' => 'nullable|numeric',
-                'longitude' => 'nullable|numeric',
+                'title'        => 'sometimes|string|max:255',
+                'description'  => 'sometimes|string',
+                'sentiment'    => 'sometimes|in:positive,neutral,negative',
+                'actor'        => 'nullable|string|max:255',
+                'category'     => 'sometimes|exists:categories,id',
+                'priority'     => 'sometimes|in:high,medium,low',
+                'tag'          => 'nullable|string|max:100',
+                'region'       => 'nullable|exists:regions,id',
+                'location'     => 'nullable|string|max:255',
+                'latitude'     => 'nullable|numeric',
+                'longitude'    => 'nullable|numeric',
                 'published_at' => 'nullable|date',
             ]);
 
@@ -381,18 +425,28 @@ class TicketController extends Controller
             }
 
             $updateData = [];
+
+            if ($request->has('title'))        $updateData['Title']       = $request->title;
+            if ($request->has('description'))  $updateData['Description'] = $request->description;
+            if ($request->has('sentiment'))    $updateData['Sentiment']   = $request->sentiment;
+            if ($request->has('actor'))        $updateData['Actor']       = $request->actor;
+            if ($request->has('category')) {
+                $updateData['CategoryId'] = $request->category;
+                $category = Category::find($request->category);
+                $updateData['Category']   = $category?->Name;
+            }
+
+            if ($request->has('priority'))     $updateData['Priority']    = $request->priority;
+            if ($request->has('tag'))          $updateData['Tag']         = $request->tag;
+            if ($request->has('region')) {
+                $updateData['RegionId'] = $request->region;
+                $region = $request->region ? Region::find($request->region) : null;
+                $updateData['Region']   = $region?->Name;
+            }
             
-            if ($request->has('title')) $updateData['Title'] = $request->title;
-            if ($request->has('description')) $updateData['Description'] = $request->description;
-            if ($request->has('sentiment')) $updateData['Sentiment'] = $request->sentiment;
-            if ($request->has('actor')) $updateData['Actor'] = $request->actor;
-            if ($request->has('category')) $updateData['Category'] = $request->category;
-            if ($request->has('priority')) $updateData['Priority'] = $request->priority;
-            if ($request->has('tag')) $updateData['Tag'] = $request->tag;
-            if ($request->has('region')) $updateData['Region'] = $request->region;
-            if ($request->has('location')) $updateData['Location'] = $request->location;
-            if ($request->has('latitude')) $updateData['Latitude'] = $request->latitude;
-            if ($request->has('longitude')) $updateData['Longitude'] = $request->longitude;
+            if ($request->has('location'))     $updateData['Location']    = $request->location;
+            if ($request->has('latitude'))     $updateData['Latitude']    = $request->latitude;
+            if ($request->has('longitude'))    $updateData['Longitude']   = $request->longitude;
             if ($request->has('published_at')) $updateData['PublishedDate'] = $request->published_at;
 
             $ticket->update($updateData);

@@ -1,19 +1,19 @@
 <x-guest-layout>
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    {{-- Logo dengan crop otomatis --}}
+    {{-- Logo --}}
     <div class="flex justify-center mb-4"> {{-- Margin bottom dikurangi --}}
         <div class="w-56 h-24 overflow-hidden rounded-lg shadow-sm"> {{-- Container 192x80 --}}
             <img 
                 src="{{ asset('images/azurecly-logo.png') }}" 
                 alt="Azurecly" 
                 class="w-full h-full object-cover object-center"
-                style="object-position: 50% 40%;" {{-- Atur ini untuk crop yang pas --}}
+                style="object-position: 50% 50%;"
             >
         </div>
     </div>
 
-    {{-- Sisa form tetap --}}
+    {{-- From --}}
     <form method="POST" action="{{ route('login') }}" class="space-y-5"> {{-- Kurangi space-y --}}
         @csrf
 

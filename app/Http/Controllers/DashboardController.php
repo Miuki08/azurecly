@@ -6,6 +6,8 @@ use App\Models\Ticket;
 use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Category;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -30,19 +32,29 @@ class DashboardController extends Controller
                                 'Location', 'Latitude', 'Longitude', 'PublishedDate']);
 
         // Kategori terpopuler
-        $popular_categories = Ticket::select('Category')
-            ->selectRaw('count(*) as total')
-            ->groupBy('Category')
+        $popular_categories = Ticket::select('CategoryId', DB::raw('count(*) as total'))
+            ->whereNotNull('CategoryId')
+            ->groupBy('CategoryId')
             ->orderBy('total', 'desc')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function ($row) {
+                $category = Category::find($row->CategoryId);
+
+                return (object) [
+                    'id'    => $row->CategoryId,
+                    'name'  => $category?->Name,
+                    'total' => $row->total,
+                ];
+            });
 
         // High priority dengan negative sentiment
-        $high_priority_negative = Ticket::where('Priority', 'high')
+        $high_priority_negative = Ticket::with(['category', 'region'])
+            ->where('Priority', 'high')
             ->where('Sentiment', 'negative')
             ->orderBy('PublishedDate', 'desc')
             ->limit(5)
-            ->get(['id', 'Title', 'Description', 'Location', 'PublishedDate']);
+            ->get(['id', 'Title', 'Description', 'Location', 'PublishedDate', 'CategoryId', 'RegionId']);
 
         return view('dashboard.index', compact(
             'stats', 'maps_data', 'popular_categories', 'high_priority_negative'

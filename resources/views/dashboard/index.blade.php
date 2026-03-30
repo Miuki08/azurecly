@@ -80,38 +80,44 @@
                 <div id="map" style="height: 400px; width: 100%;" class="w-full"></div>
             </div>
 
-            {{-- 2 Column Layout --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
                 {{-- Kategori Populer --}}
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-4">
-                        <div class="p-2 bg-sea-blue-100 rounded-lg mr-3">
-                            <i data-lucide="trending-up" class="w-5 h-5 text-sea-blue-600"></i>
-                        </div>
-                        Kategori Terpopuler
-                    </h3>
-                    <div class="space-y-4">
-                        @foreach($popular_categories as $category)
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <div class="flex items-center">
-                                    <i data-lucide="folder" class="w-4 h-4 text-gray-400 mr-2"></i>
-                                    <span class="text-sm font-medium text-gray-700">{{ $category->Category }}</span>
-                                </div>
-                                <span class="text-sm font-semibold text-gray-900">{{ $category->total }} berita</span>
-                            </div>
-                            <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                                @php
-                                    $max = $popular_categories->max('total');
-                                    $percentage = ($category->total / $max) * 100;
-                                @endphp
-                                <div class="h-full bg-sea-blue-500 rounded-full" style="width: {{ $percentage }}%"></div>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
+                {{-- Kategori Populer --}}
+<div class="bg-white rounded-lg shadow p-6">
+    <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-4">
+        <div class="p-2 bg-sea-blue-100 rounded-lg mr-3">
+            <i data-lucide="trending-up" class="w-5 h-5 text-sea-blue-600"></i>
+        </div>
+        Kategori Terpopuler
+    </h3>
+    <div class="space-y-4">
+        @php
+            $max = $popular_categories->max('total');
+        @endphp
+
+        @foreach($popular_categories as $category)
+        <div>
+            <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center">
+                    <i data-lucide="folder" class="w-4 h-4 text-gray-400 mr-2"></i>
+                    <span class="text-sm font-medium text-gray-700">
+                        {{ $category->name ?? 'Tanpa kategori' }}
+                    </span>
                 </div>
+                <span class="text-sm font-semibold text-gray-900">
+                    {{ $category->total }} berita
+                </span>
+            </div>
+            <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                @php
+                    $percentage = $max > 0 ? ($category->total / $max) * 100 : 0;
+                @endphp
+                <div class="h-full bg-sea-blue-500 rounded-full" style="width: {{ $percentage }}%"></div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
 
                 {{-- High Priority Negative --}}
                 <div class="bg-white rounded-lg shadow p-6">
