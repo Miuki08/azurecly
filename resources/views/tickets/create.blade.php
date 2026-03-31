@@ -57,31 +57,70 @@
                                     @enderror
                                 </div>
 
-                                {{-- Gambar besar --}}
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                                        Gambar Berita
-                                    </label>
-                                    <div id="image-preview" class="mt-2 grid grid-cols-1 md:grid-cols-[auto,1fr] gap-4 items-start">
-                                        <div class="w-full md:w-56 h-40 rounded-lg bg-gray-50 border border-dashed border-gray-300 flex items-center justify-center text-[11px] text-gray-400 overflow-hidden">
-                                            <span id="image-placeholder-text">Preview</span>
-                                        </div>
-                                        <div>
-                                            <label class="cursor-pointer inline-flex">
-                                                <span class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs text-gray-700 hover:bg-gray-50 inline-flex items-center gap-2">
-                                                    <i data-lucide="image" class="w-4 h-4"></i>
-                                                    Pilih gambar
-                                                </span>
-                                                <input type="file" name="image" id="image" accept="image/*" class="hidden">
-                                            </label>
-                                            @error('image')
-                                                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-                                            @enderror
-                                            <p class="text-[11px] text-gray-400 mt-1">
-                                                Opsional. PNG/JPG maks. 2MB.
-                                            </p>
-                                        </div>
+                                {{-- Gambar --}}
+                                <div x-data="imageUploader()" class="mt-2">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-sm font-medium text-gray-700">
+                                            Media
+                                        </label>
+                                        <small class="text-[11px] text-gray-400">
+                                            <span x-text="files.length"></span> of 5 images selected
+                                        </small>
                                     </div>
+
+                                    <p class="text-[11px] text-gray-400 mb-2">
+                                        Postingan tidak boleh melebihi 5 foto. PNG/JPG, masing-masing maks. 2MB.
+                                    </p>
+
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-2.5">
+                                        <div class="grid grid-cols-5 gap-1">
+                                            <template x-for="(file, index) in files" :key="index">
+                                                <div class="relative">
+                                                    <div class="w-full aspect-square rounded-md overflow-hidden border border-gray-200 bg-white">
+                                                        <img :src="file.url"
+                                                            class="w-full h-full object-cover">
+                                                    </div>
+                                                    <button type="button"
+                                                            @click.stop="remove(index)"
+                                                            class="absolute top-1 left-1 bg-white/90 hover:bg-red-500 hover:text-white text-gray-600 border border-gray-200 rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow">
+                                                        &times;
+                                                    </button>
+                                                </div>
+                                            </template>
+                                            
+                                            <template x-if="files.length < maxFiles">
+                                                <div
+                                                    x-on:dragover.prevent="dragging = true"
+                                                    x-on:dragleave.prevent="dragging = false"
+                                                    x-on:drop.prevent="handleDrop($event)"
+                                                    @click="$refs.fileInput.click()"
+                                                    :class="dragging ? 'border-sea-blue-400 bg-sea-blue-50/40' : 'border-dashed border-gray-300 bg-white'"
+                                                    class="w-full aspect-square rounded-md border-2 flex flex-col items-center justify-center text-[10px] text-gray-500 cursor-pointer transition"
+                                                >
+                                                    <i data-lucide="plus" class="w-4 h-4 text-gray-400 mb-1"></i>
+                                                    <p class="text-[10px] text-center leading-tight">Tambah</p>
+                                                    <p class="text-[9px] text-gray-400 mt-0.5">Max. 5 files</p>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <input
+                                            type="file"
+                                            name="images[]"
+                                            x-ref="fileInput"
+                                            id="images"
+                                            accept="image/*"
+                                            multiple
+                                            class="hidden"
+                                            @change="handleInput($event)"
+                                        >
+                                    </div>
+
+                                    @error('images')
+                                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                                    @enderror
+                                    @error('images.*')
+                                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                                    @enderror
                                 </div>
                             </div>
                         </div>
@@ -89,7 +128,6 @@
 
                     {{-- Klasifikasi & Lokasi --}}
                     <div class="lg:col-span-1 space-y-5">
-                        {{-- Klasifikasi & Sentimen --}}
                         <div class="bg-white rounded-lg shadow border border-gray-100">
                             <div class="px-5 py-4 border-b border-gray-100 flex items-center">
                                 <div class="p-2 bg-sea-blue-50 rounded-lg mr-3">
@@ -187,18 +225,36 @@
                         </div>
 
                         {{-- Lokasi & Waktu --}}
-                        <div class="bg-white rounded-lg shadow border border-gray-100">
-                            <div class="px-5 py-4 border-b border-gray-100 flex items-center">
-                                <div class="p-2 bg-sea-blue-50 rounded-lg mr-3">
-                                    <i data-lucide="map-pin" class="w-4 h-4 text-sea-blue-700"></i>
+                        <div x-data="{ openLocation: false }" class="bg-white rounded-lg shadow border border-gray-100">
+                            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="p-2 bg-sea-blue-50 rounded-lg mr-3">
+                                        <i data-lucide="map-pin" class="w-4 h-4 text-sea-blue-700"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-gray-800">Lokasi & Waktu</h3>
+                                        <p class="text-xs text-gray-500">Detail lokasi kejadian dan waktu publikasi.</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 class="text-sm font-semibold text-gray-800">Lokasi & Waktu</h3>
-                                    <p class="text-xs text-gray-500">Detail lokasi kejadian dan waktu publikasi.</p>
-                                </div>
+
+                                <button type="button"
+                                        @click="openLocation = !openLocation"
+                                        class="inline-flex items-center px-2 py-1 border border-gray-200 rounded-md text-[11px] text-gray-500 hover:bg-gray-50">
+                                    <span x-show="openLocation" x-cloak>Sembunyikan</span>
+                                    <span x-show="!openLocation" x-cloak>Tampilkan</span>
+                                    <i x-show="openLocation" x-cloak data-lucide="chevron-up" class="w-3 h-3 ml-1"></i>
+                                    <i x-show="!openLocation" x-cloak data-lucide="chevron-down" class="w-3 h-3 ml-1"></i>
+                                </button>
                             </div>
 
-                            <div class="px-5 py-5 space-y-4">
+                            <div x-show="openLocation"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-100"
+                                 x-transition:leave-start="opacity-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 -translate-y-1"
+                                 class="px-5 py-5 space-y-4">
                                 {{-- Region --}}
                                 <div>
                                     <label for="region" class="block text-sm font-medium text-gray-700 mb-1">
@@ -274,7 +330,6 @@
                     </div>
                 </div>
 
-                {{-- Tombol submit di bawah, full width --}}
                 <div class="flex justify-end gap-3 pt-3">
                     <a href="{{ route('tickets.index') }}"
                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition">
@@ -291,36 +346,69 @@
     </div>
 
     @push('scripts')
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            });
 
-            const fileInput = document.getElementById('image');
-            const previewBox = document.querySelector('.w-full.md\\:w-56.h-40.rounded-lg'); // atau kasih id sendiri
-            const placeholderText = document.getElementById('image-placeholder-text');
+            function imageUploader() {
+                return {
+                    files: [],
+                    dragging: false,
+                    maxFiles: 5,
 
-            if (fileInput && previewBox) {
-                fileInput.addEventListener('change', function (e) {
-                    const file = e.target.files[0];
-                    if (!file) return;
+                    handleInput(e) {
+                        const selected = Array.from(e.target.files);
+                        this.addFiles(selected);
+                    },
 
-                    const reader = new FileReader();
-                    reader.onload = function (event) {
-                        previewBox.style.backgroundImage = `url('${event.target.result}')`;
-                        previewBox.style.backgroundSize = 'cover';
-                        previewBox.style.backgroundPosition = 'center';
-                        previewBox.style.borderStyle = 'solid';
-                        if (placeholderText) {
-                            placeholderText.style.display = 'none';
+                    handleDrop(e) {
+                        this.dragging = false;
+                        const dropped = Array.from(e.dataTransfer.files);
+                        this.addFiles(dropped);
+                    },
+
+                    addFiles(newFiles) {
+                        const imageFiles = newFiles.filter(file => file.type.startsWith('image/'));
+
+                        let combined = [
+                            ...this.files,
+                            ...imageFiles.map(file => ({
+                                file,
+                                url: URL.createObjectURL(file),
+                            }))
+                        ];
+
+                        if (combined.length > this.maxFiles) {
+                            combined = combined.slice(0, this.maxFiles);
                         }
-                    };
-                    reader.readAsDataURL(file);
-                });
+
+                        this.files = combined;
+
+                        const dataTransfer = new DataTransfer();
+                        this.files.forEach(item => dataTransfer.items.add(item.file));
+                        if (this.$refs.fileInput) {
+                            this.$refs.fileInput.files = dataTransfer.files;
+                        }
+                    },
+
+                    remove(index) {
+                        const removed = this.files.splice(index, 1)[0];
+                        if (removed && removed.url) {
+                            URL.revokeObjectURL(removed.url);
+                        }
+
+                        const dataTransfer = new DataTransfer();
+                        this.files.forEach(item => dataTransfer.items.add(item.file));
+                        if (this.$refs.fileInput) {
+                            this.$refs.fileInput.files = dataTransfer.files;
+                        }
+                    }
+                }
             }
-        });
-    </script>
+        </script>
     @endpush
 </x-app-layout>

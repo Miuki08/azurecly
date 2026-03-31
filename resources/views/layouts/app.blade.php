@@ -15,6 +15,7 @@
         
         @stack('styles')
     </head>
+    <script src="//unpkg.com/alpinejs" defer></script>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
             @include('layouts.navigation')

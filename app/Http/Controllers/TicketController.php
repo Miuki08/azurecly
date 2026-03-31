@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\Category;
 use App\Models\Region;
+use App\Models\TicketImage;
 use App\Http\Resources\TicketResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -163,24 +164,20 @@ class TicketController extends Controller
             'latitude'     => 'nullable|numeric',
             'longitude'    => 'nullable|numeric',
             'published_at' => 'nullable|date',
-            'image'        => 'nullable|image|max:2048',
+            'images'       => 'nullable|array|max:5',
+            'images.*'     => 'image|max:2048',
         ]);
-
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('tickets', 'public');
-        }
 
         $category = Category::find($validated['category']);
         $region   = $validated['region'] ? Region::find($validated['region']) : null;
 
-        Ticket::create([
+        $ticket = Ticket::create([
             'Title'         => $validated['title'],
             'Description'   => $validated['description'],
             'Sentiment'     => $validated['sentiment'],
             'Actor'         => $validated['actor'] ?? null,
             'CategoryId'    => $validated['category'],
-            'Category'      => $category?->Name,   
+            'Category'      => $category?->Name,
             'Priority'      => $validated['priority'],
             'Tag'           => $validated['tag'] ?? null,
             'RegionId'      => $validated['region'] ?? null,
@@ -191,10 +188,23 @@ class TicketController extends Controller
             'PublishedDate' => $validated['published_at'] ?? null,
             'Created'       => Auth::id(),
             'ViewCount'     => 0,
-            'Image'         => $imagePath,
         ]);
+        
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $index => $file) {
+                $path = $file->store('tickets', 'public');
 
-        return redirect()->route('tickets.index')->with('success', 'Berita berhasil ditambahkan');
+                $ticket->images()->create([
+                    'Path'          => $path,
+                    'Description' => $file->getClientOriginalName(),
+                    'Order'         => $index,
+                ]);
+            }
+        }
+
+        return redirect()
+            ->route('tickets.index')
+            ->with('success', 'Berita berhasil ditambahkan');
     }
 
     
@@ -203,20 +213,21 @@ class TicketController extends Controller
      */
     public function showWeb($id)
     {
-        $ticket = Ticket::with('creator')->findOrFail($id);
+        $ticket = Ticket::with(['creator', 'images'])->findOrFail($id);
         $ticket->increment('ViewCount');
-        
+
         return view('tickets.show', compact('ticket'));
     }
-    
+        
     /**
      * Show form edit ticket (WEB)
      */
     public function editWeb($id)
     {
-        $ticket = Ticket::findOrFail($id);
+        $ticket = Ticket::with('images')->findOrFail($id);
         $categories = Category::orderBy('Name')->get();
         $regions    = Region::orderBy('Name')->get();
+
         return view('tickets.edit', compact('ticket', 'categories', 'regions'));
     }
     
@@ -371,8 +382,6 @@ class TicketController extends Controller
     {
         try {
             $ticket = Ticket::with('creator')->findOrFail($id);
-            
-            // Increment view count
             $ticket->increment('ViewCount');  
 
             return response()->json([

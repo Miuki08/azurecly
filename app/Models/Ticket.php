@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\TicketImage;
 
 class Ticket extends Model
 {
@@ -64,7 +65,7 @@ class Ticket extends Model
     }
     
     /* 
-    * Relasi table category dan region
+    * Relasi table category, region, images
     */
     public function category()
     {
@@ -74,6 +75,11 @@ class Ticket extends Model
     public function region()
     {
         return $this->belongsTo(Region::class, 'RegionId');
+    }
+
+    public function images()
+    {
+        return $this->hasMany(TicketImage::class, 'TicketId', 'id');
     }
 
 }

@@ -22,7 +22,6 @@ class DashboardController extends Controller
             'high_priority' => Ticket::where('Priority', 'high')->count(),
         ];
 
-        // Data untuk maps (hanya yang punya lokasi)
         $maps_data = Ticket::whereNotNull('Latitude')
                           ->whereNotNull('Longitude')
                           ->whereNotNull('Location')
@@ -31,7 +30,6 @@ class DashboardController extends Controller
                           ->get(['id', 'Title', 'Sentiment', 'Priority', 
                                 'Location', 'Latitude', 'Longitude', 'PublishedDate']);
 
-        // Kategori terpopuler
         $popular_categories = Ticket::select('CategoryId', DB::raw('count(*) as total'))
             ->whereNotNull('CategoryId')
             ->groupBy('CategoryId')
@@ -48,7 +46,6 @@ class DashboardController extends Controller
                 ];
             });
 
-        // High priority dengan negative sentiment
         $high_priority_negative = Ticket::with(['category', 'region'])
             ->where('Priority', 'high')
             ->where('Sentiment', 'negative')
