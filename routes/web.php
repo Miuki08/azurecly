@@ -1,9 +1,10 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,7 +45,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/contacts', [ContactController::class, 'indexWeb'])->name('contacts.index');
+    Route::get('/contacts/create', [ContactController::class, 'createWeb'])->name('contacts.create');
+    Route::post('/contacts', [ContactController::class, 'storeWeb'])->name('contacts.store');
+    Route::get('/contacts/{contact}/edit', [ContactController::class, 'editWeb'])->name('contacts.edit');
+    Route::put('/contacts/{contact}', [ContactController::class, 'updateWeb'])->name('contacts.update');
+    Route::delete('/contacts/{contact}', [ContactController::class, 'destroyWeb'])->name('contacts.destroy');
+});
+
 Route::get('/api/map-data', [DashboardController::class, 'getMapData'])
     ->middleware('auth');
-
+    
 require __DIR__.'/auth.php';

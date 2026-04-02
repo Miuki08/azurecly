@@ -5,12 +5,12 @@
             <div class="flex">
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" class="flex items-center">
-                        <div class="h-14 w-24 overflow-hidden rounded-md">  {{-- Container dengan fixed size --}}
+                        <div class="h-14 w-24 overflow-hidden rounded-md"> 
                             <img 
                                 src="{{ asset('images/azurecly-logo.png') }}" 
                                 alt="Azurecly" 
                                 class="w-full h-full object-cover object-center"
-                                style="object-position: 50% 45%;"  {{-- Crop di posisi 45% (sedikit crop atas & bawah) --}}
+                                style="object-position: 50% 50%;"
                             >
                         </div>
                     </a>
@@ -25,7 +25,12 @@
                     
                     <x-nav-link :href="route('tickets.index')" :active="request()->routeIs('tickets.*')" class="flex items-center">
                         <i data-lucide="newspaper" class="w-4 h-4 mr-1.5"></i>
-                        {{ __('Berita') }}
+                        {{ __('News') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('contacts.index')" :active="request()->routeIs('contacts.*')">
+                        <i data-lucide="contact-2" class="w-4 h-4 mr-1.5"></i>
+                        {{ __('Contact') }}
                     </x-nav-link>
                 </div>
             </div>
