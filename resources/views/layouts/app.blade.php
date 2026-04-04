@@ -16,8 +16,11 @@
         @stack('styles')
     </head>
     <script src="//unpkg.com/alpinejs" defer></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
+        <div {{ $attributes->merge(['class' => 'min-h-screen bg-gray-100']) }}>
             @include('layouts.navigation')
 
             @if (isset($header))

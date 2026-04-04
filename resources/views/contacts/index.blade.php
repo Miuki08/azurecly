@@ -1,13 +1,11 @@
-<x-app-layout>
+<div data-default-category="{{ $categories[0] ?? 'humas' }}"></div>
+<x-app-layout x-data="contactPage">
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <div>
                 <h2 class="font-semibold text-xl text-sea-blue-800 leading-tight">
                     Contacts
                 </h2>
-                <!-- <p class="text-xs text-gray-500 mt-0.5">
-                    Kelola kontak humas, media, dan relasi penting lainnya.
-                </p> -->
             </div>
 
             <div class="flex items-center gap-2">
@@ -21,11 +19,14 @@
                     <span class="hidden sm:inline">Filter</span>
                 </button>
 
-                <a href="{{ route('contacts.create') }}"
-                   class="inline-flex items-center gap-1.5 bg-sea-blue-600 hover:bg-sea-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition duration-150">
+                <button
+                    type="button"
+                    @click="openCreate()"
+                    class="inline-flex items-center gap-1.5 bg-sea-blue-600 hover:bg-sea-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition duration-150"
+                >
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     Add Contact
-                </a>
+                </button>
             </div>
         </div>
     </x-slot>
@@ -119,10 +120,14 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-3 text-right space-x-1">
-                                        <a href="{{ route('contacts.edit', $contact->id) }}"
-                                           class="inline-flex items-center justify-center w-8 h-8 rounded-full text-sea-blue-700 hover:bg-sea-blue-50 transition-colors duration-150">
+                                        <button
+                                            type="button"
+                                            class="inline-flex items-center justify-center w-8 h-8 rounded-full text-sea-blue-700 hover:bg-sea-blue-50 transition-colors duration-150"
+                                            @click="openEdit({{ $contact->toJson() }})"
+                                        >
                                             <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                        </a>
+                                        </button>
+
                                         <form action="{{ route('contacts.destroy', $contact->id) }}" method="POST" class="inline">
                                             @csrf
                                             @method('DELETE')
@@ -139,10 +144,14 @@
                                     <td colspan="7" class="px-6 py-10 text-center text-gray-500">
                                         <i data-lucide="address-book" class="w-10 h-10 mx-auto text-gray-300 mb-3"></i>
                                         <p class="text-sm font-medium">Belum ada kontak</p>
-                                        <a href="{{ route('contacts.create') }}"
-                                           class="mt-2 inline-block text-sea-blue-700 hover:text-sea-blue-900 text-sm">
+                                        <button
+                                            type="button"
+                                            class="mt-2 inline-flex items-center gap-1 text-sea-blue-700 hover:text-sea-blue-900 text-sm"
+                                            @click="openCreate()"
+                                        >
+                                            <i data-lucide="plus" class="w-4 h-4"></i>
                                             Tambahkan kontak pertama
-                                        </a>
+                                        </button>
                                     </td>
                                 </tr>
                             @endforelse
@@ -155,7 +164,123 @@
                 </div>
             </div>
         </div>
-    </div>
+
+        {{-- Modal Add/Edit Contact --}}
+        <div
+            x-cloak
+            x-show="showModal"
+            class="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+            x-transition.opacity
+        >
+            <div
+                class="bg-white rounded-xl shadow-xl border border-gray-100 w-full max-w-lg mx-4"
+                @click.away="closeModal()"
+                x-transition.scale
+            >
+                <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-gray-800" x-text="mode === 'create' ? 'Add Contact' : 'Edit Contact'"></h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-600" @click="closeModal()">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <form
+                    :action="mode === 'create' ? '{{ route('contacts.store') }}' : '{{ url('contacts') }}/' + form.id"
+                    method="POST"
+                    class="px-5 py-4 space-y-4"
+                >
+                    @csrf
+                    <template x-if="mode === 'edit'">
+                        <input type="hidden" name="_method" value="PUT">
+                    </template>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">
+                                Name <span class="text-[10px] text-red-500">required</span>
+                            </label>
+                            <input type="text" name="name" x-model="form.name" required
+                                   class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">
+                                Email
+                            </label>
+                            <input type="email" name="email" x-model="form.email"
+                                   class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">
+                                Phone
+                            </label>
+                            <input type="text" name="phone" x-model="form.phone"
+                                   class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">
+                                Position
+                            </label>
+                            <input type="text" name="position" x-model="form.position"
+                                   class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">
+                                Institution
+                            </label>
+                            <input type="text" name="institution" x-model="form.institution"
+                                   class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">
+                                Category
+                            </label>
+                            <select name="category" x-model="form.category"
+                                    class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                @foreach($categories as $cat)
+                                    <option value="{{ $cat }}">{{ ucfirst($cat) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <input id="favorite" name="favorite" type="checkbox" value="1"
+                               class="h-4 w-4 text-sea-blue-600 border-gray-300 rounded"
+                               x-model="form.favorite">
+                        <label for="favorite" class="text-xs text-gray-700">
+                            Tandai sebagai favorite
+                        </label>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">
+                            Notes
+                        </label>
+                        <textarea name="notes" rows="3"
+                                  class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                  x-model="form.notes"></textarea>
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                        <button type="button"
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition"
+                                @click="closeModal()">
+                            Batal
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 bg-sea-blue-600 hover:bg-sea-blue-700 text-white rounded-lg text-xs font-medium inline-flex items-center gap-1 transition">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span x-text="mode === 'create' ? 'Simpan Kontak' : 'Update Kontak'"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
     @push('scripts')
         <script src="https://unpkg.com/lucide@latest"></script>
