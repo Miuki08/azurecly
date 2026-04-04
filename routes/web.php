@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\TicketEscalationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProfileController;
@@ -37,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/{id}/edit', [TicketController::class, 'editWeb'])->name('tickets.edit');
     Route::put('/tickets/{id}', [TicketController::class, 'updateWeb'])->name('tickets.update');
     Route::delete('/tickets/{id}', [TicketController::class, 'destroyWeb'])->name('tickets.destroy');
+    Route::post('/tickets/{ticket}/escalate', [TicketEscalationController::class, 'store'])->name('tickets.escalate');
 });
 
 Route::middleware('auth')->group(function () {

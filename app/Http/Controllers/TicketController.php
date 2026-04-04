@@ -6,6 +6,7 @@ use App\Models\Ticket;
 use App\Models\Category;
 use App\Models\Region;
 use App\Models\TicketImage;
+use App\Models\Contact;
 use App\Http\Resources\TicketResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -214,9 +215,10 @@ class TicketController extends Controller
     public function showWeb($id)
     {
         $ticket = Ticket::with(['creator', 'images'])->findOrFail($id);
+        $contacts = Contact::orderBy('Name')->get();
         $ticket->increment('ViewCount');
 
-        return view('tickets.show', compact('ticket'));
+        return view('tickets.show', compact('ticket', 'contacts'));
     }
         
     /**
@@ -278,6 +280,7 @@ class TicketController extends Controller
             $category = Category::find($validated['category']);
             $updateData['Category'] = $category?->Name;
         }
+        
         if ($request->has('region')) {
             $region = $validated['region'] ? Region::find($validated['region']) : null;
             $updateData['Region'] = $region?->Name;
@@ -522,7 +525,7 @@ class TicketController extends Controller
                 'medium' => Ticket::where('Priority', 'medium')->count(),          
                 'low' => Ticket::where('Priority', 'low')->count(),                
             ],
-            'by_region' => [                                                       // <-- TAMBAHAN BARU
+            'by_region' => [                                                      
                 'jakarta' => Ticket::where('Region', 'LIKE', '%jakarta%')->count(),
                 'bandung' => Ticket::where('Region', 'LIKE', '%bandung%')->count(),
                 'surabaya' => Ticket::where('Region', 'LIKE', '%surabaya%')->count(),

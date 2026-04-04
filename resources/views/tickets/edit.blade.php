@@ -18,7 +18,7 @@
                 @method('PUT')
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    {{-- KIRI: Informasi Utama + Media --}}
+                    {{-- Informasi Utama + Media --}}
                     <div class="lg:col-span-2 space-y-5">
                         {{-- Card: Informasi Utama --}}
                         <div class="bg-white rounded-lg shadow border border-gray-100">
