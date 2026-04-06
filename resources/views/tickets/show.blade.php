@@ -6,7 +6,8 @@
         recipient: '',
         message: '',
         showContactDropdown: false,
-        selectedContactName: ''
+        selectedContactName: '',
+        isSubmitting: false
     }"
 >
     <x-slot name="header">
@@ -270,6 +271,7 @@
                 action="{{ route('tickets.escalate', $ticket->id) }}"
                 method="POST"
                 class="px-5 py-4 space-y-4"
+                @Submit='isSubmitting = true'
             >
                 @csrf
 
@@ -436,7 +438,7 @@
                 </div>
 
                 {{-- Footer --}}
-                <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                <!-- <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
                     <button
                         type="button"
                         class="px-4 py-2 border border-gray-300 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition"
@@ -451,6 +453,41 @@
                         <i data-lucide="send" class="w-4 h-4"></i>
                         Kirim Eskalasi
                     </button>
+                </div> -->
+                {{-- Footer --}}
+                <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                    <button
+                        type="button"
+                        class="px-4 py-2 border border-gray-300 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition"
+                        @click="showEscalationModal = false"
+                        :disabled="isSubmitting"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        class="px-4 py-2 bg-sea-blue-600 hover:bg-sea-blue-700 text-white rounded-lg text-xs font-medium inline-flex items-center gap-1 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                        :disabled="isSubmitting"
+                    >
+                        <svg
+                            x-show="isSubmitting"
+                            class="w-4 h-4 animate-spin text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 
+                                    5.291A7.962 7.962 0 014 12H0c0 
+                                    3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+
+                        <i x-show="!isSubmitting" data-lucide="send" class="w-4 h-4"></i>
+
+                        <span x-text="isSubmitting ? 'Mengirim...' : 'Kirim Eskalasi'"></span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -458,6 +495,7 @@
 
     @push('scripts')
         <script src="https://unpkg.com/lucide@latest"></script>
+
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 if (typeof lucide !== 'undefined') {
@@ -465,5 +503,31 @@
                 }
             });
         </script>
+
+        @if(session('success'))
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: @json(session('success')),
+                        confirmButtonColor: '#0284c7',
+                    });
+                });
+            </script>
+        @endif
+
+        @if(session('error'))
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: @json(session('error')),
+                        confirmButtonColor: '#dc2626',
+                    });
+                });
+            </script>
+        @endif
     @endpush
 </x-app-layout>
