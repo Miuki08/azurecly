@@ -56,7 +56,7 @@ It helps teams track media coverage, classify sentiments, and manage escalation 
 ### Installation
 
 ```bash
-git clone <your-repo-url> azurecly
+git clone https://github.com/Miuki08/azurecly.git
 cd azurecly
 
 # Install PHP dependencies
