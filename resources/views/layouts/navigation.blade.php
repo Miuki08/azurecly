@@ -1,3 +1,13 @@
+@php
+    $user = Auth::user();
+
+    // Dashboard aktif untuk semua route dashboard
+    $isDashboard = request()->routeIs('dashboard')
+        || request()->routeIs('dashboard.admin')
+        || request()->routeIs('dashboard.humas')
+        || request()->routeIs('dashboard.media');
+@endphp
+
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-200 shadow-sm">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -5,10 +15,10 @@
             <div class="flex">
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" class="flex items-center">
-                        <div class="h-14 w-24 overflow-hidden rounded-md"> 
-                            <img 
-                                src="{{ asset('images/azurecly-logo.png') }}" 
-                                alt="Azurecly" 
+                        <div class="h-14 w-24 overflow-hidden rounded-md">
+                            <img
+                                src="{{ asset('images/azurecly-logo.png') }}"
+                                alt="Azurecly"
                                 class="w-full h-full object-cover object-center"
                                 style="object-position: 50% 50%;"
                             >
@@ -16,22 +26,29 @@
                     </a>
                 </div>
 
-                <!-- Navigation Links -->
+                <!-- Navigation Links (Desktop) -->
                 <div class="hidden space-x-6 sm:-my-px sm:ms-10 sm:flex sm:items-center">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="flex items-center">
+                    {{-- Dashboard (selalu ada) --}}
+                    <x-nav-link :href="route('dashboard')" :active="$isDashboard" class="flex items-center">
                         <i data-lucide="layout-dashboard" class="w-4 h-4 mr-1.5"></i>
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    
-                    <x-nav-link :href="route('tickets.index')" :active="request()->routeIs('tickets.*')" class="flex items-center">
-                        <i data-lucide="newspaper" class="w-4 h-4 mr-1.5"></i>
-                        {{ __('News') }}
-                    </x-nav-link>
 
-                    <x-nav-link :href="route('contacts.index')" :active="request()->routeIs('contacts.*')">
-                        <i data-lucide="contact-2" class="w-4 h-4 mr-1.5"></i>
-                        {{ __('Contact') }}
-                    </x-nav-link>
+                    {{-- News hanya admin & humas --}}
+                    @if(in_array($user->role, ['admin', 'humas']))
+                        <x-nav-link :href="route('tickets.index')" :active="request()->routeIs('tickets.*')" class="flex items-center">
+                            <i data-lucide="newspaper" class="w-4 h-4 mr-1.5"></i>
+                            {{ __('News') }}
+                        </x-nav-link>
+                    @endif
+
+                    {{-- Contact hanya admin & humas (kalau memang begitu kebijakannya) --}}
+                    @if(in_array($user->role, ['admin', 'humas']))
+                        <x-nav-link :href="route('contacts.index')" :active="request()->routeIs('contacts.*')" class="flex items-center">
+                            <i data-lucide="contact-2" class="w-4 h-4 mr-1.5"></i>
+                            {{ __('Contact') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -44,7 +61,7 @@
                                 <div class="w-8 h-8 rounded-full bg-sea-blue-100 flex items-center justify-center">
                                     <i data-lucide="user" class="w-4 h-4 text-sea-blue-600"></i>
                                 </div>
-                                <span>{{ Auth::user()->name }}</span>
+                                <span>{{ $user->name }}</span>
                             </div>
                             <div class="ms-2">
                                 <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -64,8 +81,7 @@
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')" class="flex items-center text-red-600 hover:text-red-700"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
+                                             onclick="event.preventDefault(); this.closest('form').submit();">
                                 <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
                                 {{ __('Log Out') }}
                             </x-dropdown-link>
@@ -78,26 +94,42 @@
             <div class="-me-2 flex items-center sm:hidden">
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-sea-blue-600 hover:bg-sea-blue-50 focus:outline-none focus:bg-sea-blue-50 focus:text-sea-blue-600 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex"
+                              stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 6h16M4 12h16M4 18h16" />
+                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden"
+                              stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Responsive Navigation Menu (Mobile) -->
+    <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="flex items-center">
+            {{-- Dashboard --}}
+            <x-responsive-nav-link :href="route('dashboard')" :active="$isDashboard" class="flex items-center">
                 <i data-lucide="layout-dashboard" class="w-4 h-4 mr-2"></i>
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
-            
-            <x-responsive-nav-link :href="route('tickets.index')" :active="request()->routeIs('tickets.*')" class="flex items-center">
-                <i data-lucide="newspaper" class="w-4 h-4 mr-2"></i>
-                {{ __('Berita') }}
-            </x-responsive-nav-link>
+
+            {{-- News hanya admin & humas --}}
+            @if(in_array($user->role, ['admin', 'humas']))
+                <x-responsive-nav-link :href="route('tickets.index')" :active="request()->routeIs('tickets.*')" class="flex items-center">
+                    <i data-lucide="newspaper" class="w-4 h-4 mr-2"></i>
+                    {{ __('News') }}
+                </x-responsive-nav-link>
+            @endif
+
+            {{-- Contact hanya admin & humas --}}
+            @if(in_array($user->role, ['admin', 'humas']))
+                <x-responsive-nav-link :href="route('contacts.index')" :active="request()->routeIs('contacts.*')" class="flex items-center">
+                    <i data-lucide="contact-2" class="w-4 h-4 mr-2"></i>
+                    {{ __('Contact') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->
@@ -108,8 +140,8 @@
                         <i data-lucide="user" class="w-5 h-5 text-sea-blue-600"></i>
                     </div>
                     <div>
-                        <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                        <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+                        <div class="font-medium text-base text-gray-800">{{ $user->name }}</div>
+                        <div class="font-medium text-sm text-gray-500">{{ $user->email }}</div>
                     </div>
                 </div>
             </div>
@@ -124,8 +156,7 @@
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')" class="flex items-center text-red-600 hover:text-red-700"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
+                                            onclick="event.preventDefault(); this.closest('form').submit();">
                         <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
                         {{ __('Log Out') }}
                     </x-responsive-nav-link>
