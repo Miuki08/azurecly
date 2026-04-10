@@ -213,23 +213,18 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Inisialisasi Lucide Icons
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
 
-            // Inisialisasi map
             var map = L.map('map').setView([-6.2088, 106.8456], 10);
-            
-            // Tile layer (OpenStreetMap gratis)
+
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
 
-            // Data dari controller
             var tickets = @json($maps_data);
 
-            // Fungsi untuk mendapatkan icon berdasarkan sentiment
             function getIcon(sentiment) {
                 var color = sentiment === 'positive' ? '#10b981' : 
                            sentiment === 'negative' ? '#ef4444' : '#f59e0b';
@@ -242,7 +237,6 @@
                 });
             }
 
-            // Tambah markers jika ada data
             if (tickets && tickets.length > 0) {
                 tickets.forEach(function(ticket) {
                     if (ticket.Latitude && ticket.Longitude) {
@@ -250,7 +244,6 @@
                             icon: getIcon(ticket.Sentiment)
                         }).addTo(map);
 
-                        // Popup content
                         var popupContent = `
                             <div style="font-family: 'Inter', sans-serif; padding: 4px;">
                                 <h4 style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${ticket.Title}</h4>
@@ -274,7 +267,6 @@
                     }
                 });
 
-                // Adjust map bounds to show all markers
                 var group = new L.featureGroup();
                 tickets.forEach(function(ticket) {
                     if (ticket.Latitude && ticket.Longitude) {
@@ -283,7 +275,6 @@
                 });
                 map.fitBounds(group.getBounds().pad(0.1));
             } else {
-                // Jika tidak ada data, tetap di view Jakarta
                 console.log('Tidak ada data marker untuk ditampilkan');
             }
         });

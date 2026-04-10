@@ -45,6 +45,24 @@ class User extends Authenticatable implements JWTSubject
         'password' => 'hashed',
     ];
 
+    /**
+     * Role Authenticate
+     */
+    public function Admin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function Humas(): bool
+    {
+        return $this->role === 'humas';
+    }
+
+    public function Media(): bool
+    {
+        return $this->role === 'media';
+    }
+
     
     /**
      * 

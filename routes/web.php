@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\TicketEscalationController;
-use App\Http\Controllers\DashboardController;
+// use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\HumasDashboardController;
+use App\Http\Controllers\MediaDashboardController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketController;
@@ -26,11 +29,31 @@ Route::get('/', function () {
 //     return view('dashboard');
 // })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard/admin', [AdminDashboardController::class, 'index'])
+        ->middleware('role:admin')
+        ->name('dashboard.admin');
 
-Route::middleware('auth')->group(function () {
+    Route::get('/dashboard/humas', [HumasDashboardController::class, 'index'])
+        ->middleware('role:humas,admin')
+        ->name('dashboard.humas');
+
+    Route::get('/dashboard/media', [MediaDashboardController::class, 'index'])
+        ->middleware('role:media,admin')
+        ->name('dashboard.media');
+});
+
+Route::get('/dashboard', function () {
+    $user = auth()->user();
+
+    return match ($user->role) {
+        'admin' => redirect()->route('dashboard.admin'),
+        'media' => redirect()->route('dashboard.media'),
+        default => redirect()->route('dashboard.humas'),
+    };
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware(['auth', 'role:humas,admin'])->group(function () {
     Route::get('/tickets', [TicketController::class, 'indexWeb'])->name('tickets.index');
     Route::get('/tickets/create', [TicketController::class, 'createWeb'])->name('tickets.create');
     Route::post('/tickets', [TicketController::class, 'storeWeb'])->name('tickets.store');
@@ -56,7 +79,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/contacts/{contact}', [ContactController::class, 'destroyWeb'])->name('contacts.destroy');
 });
 
-Route::get('/api/map-data', [DashboardController::class, 'getMapData'])
-    ->middleware('auth');
+Route::get('/api/map-data', [AdminDashboardController::class, 'getMapData'])
+    ->middleware(['auth', 'role:admin']);
     
 require __DIR__.'/auth.php';
