@@ -9,6 +9,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminSettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +53,32 @@ Route::get('/dashboard', function () {
         default => redirect()->route('dashboard.humas'),
     };
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
+    Route::get('/dashboard/admin', [AdminDashboardController::class, 'index'])
+        ->name('dashboard.admin');
+
+    Route::get('/admin/settings', [AdminSettingsController::class, 'index'])
+        ->name('admin.settings.index');
+
+    Route::post('/admin/settings/site', [AdminSettingsController::class, 'storeSite'])
+        ->name('admin.settings.site.store');
+    Route::put('/admin/settings/site/{site}', [AdminSettingsController::class, 'updateSite'])
+        ->name('admin.settings.site.update');
+
+    Route::post('/admin/settings/regions', [AdminSettingsController::class, 'storeRegion'])
+        ->name('admin.settings.regions.store');
+    Route::delete('/admin/settings/regions/{region}', [AdminSettingsController::class, 'destroyRegion'])
+        ->name('admin.settings.regions.destroy');
+
+    Route::post('/admin/settings/categories', [AdminSettingsController::class, 'storeCategory'])
+        ->name('admin.settings.categories.store');
+    Route::delete('/admin/settings/categories/{category}', [AdminSettingsController::class, 'destroyCategory'])
+        ->name('admin.settings.categories.destroy');
+
+    Route::post('/admin/settings/users', [AdminSettingsController::class, 'storeUser'])
+        ->name('admin.settings.users.store');
+});
 
 Route::middleware(['auth', 'role:humas,admin'])->group(function () {
     Route::get('/tickets', [TicketController::class, 'indexWeb'])->name('tickets.index');

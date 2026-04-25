@@ -20,6 +20,7 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $fillable = [
         'name',
+        'site_id',
         'email',
         'password',
         'role',
@@ -80,6 +81,11 @@ class User extends Authenticatable implements JWTSubject
             'role' => $this->role,
             'name' => $this->name
         ];
+    }
+
+    public function site()
+    {
+        return $this->belongsTo(Site::class);
     }
 
     public function tickets()

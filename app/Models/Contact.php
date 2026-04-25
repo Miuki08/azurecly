@@ -10,13 +10,18 @@ class Contact extends Model
     use HasFactory;
 
     protected $fillable = [
-        'Name', 'Email', 'Phone', 'Position', 
+        'site_id','Name', 'Email', 'Phone', 'Position', 
         'Institution', 'Category', 'Favorite', 'Notes', 'Created'
     ];
 
     protected $casts = [
         'Favorite' => 'boolean',
     ];
+
+    public function site()
+    {
+        return $this->belongsTo(Site::class);
+    }
 
     public function creator()
     {
