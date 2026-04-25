@@ -12,8 +12,17 @@ use Illuminate\Support\Facades\Mail;
 
 class TicketEscalationController extends Controller
 {
+    
     public function store(Request $request, Ticket $ticket)
     {
+        $user   = Auth::user();
+        $siteId = $user->site_id;
+
+        // hardening: pastikan ticket milik site user
+        if ($ticket->site_id !== $siteId) {
+            abort(404);
+        }
+
         $data = $request->validate([
             'channel'    => 'required|in:email,whatsapp,both',
             'contact_id' => 'nullable|exists:contacts,id',
@@ -25,7 +34,8 @@ class TicketEscalationController extends Controller
 
         $contact = null;
         if ($data['contact_id']) {
-            $contact = Contact::find($data['contact_id']);
+            $contact = Contact::where('site_id', $siteId)
+                ->findOrFail($data['contact_id']);
 
             if (!$recipient && $contact) {
                 if ($data['channel'] === 'email') {
@@ -45,6 +55,7 @@ class TicketEscalationController extends Controller
         }
 
         $log = EscalationLog::create([
+            'site_id'   => $siteId,
             'TicketId'  => $ticket->id,
             'ContactId' => $contact?->id,
             'Channel'   => $data['channel'],
