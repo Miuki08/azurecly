@@ -19,7 +19,11 @@ class TicketController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Ticket::with('creator');
+        $siteId = Auth::user()->site_id;
+
+        $query = Ticket::with('creator')
+        ->where('site_id', $siteId);
+
 
         // Filter by sentiment
         if ($request->has('sentiment')) {
@@ -96,7 +100,10 @@ class TicketController extends Controller
      */
     public function indexWeb(Request $request)
     {
-        $query = Ticket::with('creator');
+        $siteId = Auth::user()->site_id;
+
+        $query = Ticket::with('creator')
+            ->where('site_id', $siteId);
         
         // Filter by sentiment
         if ($request->has('sentiment') && $request->sentiment) {
@@ -141,8 +148,15 @@ class TicketController extends Controller
      */
     public function createWeb()
     {
-        $categories = Category::orderBy('Name')->get();
-        $regions    = Region::orderBy('Name')->get();
+        $siteId = Auth::user()->site_id;
+
+        $categories = Category::where('site_id', $siteId)
+            ->orderBy('Name')
+            ->get();
+
+        $regions = Region::where('site_id', $siteId)
+            ->orderBy('Name')
+            ->get();
 
         return view('tickets.create', compact('categories', 'regions'));
     }
@@ -152,6 +166,9 @@ class TicketController extends Controller
      */
     public function storeWeb(Request $request)
     {
+        $siteId = Auth::user()->site_id;
+        // dd(Auth::user()->site_id);
+
         $validated = $request->validate([
             'title'        => 'required|string|max:255',
             'description'  => 'required|string',
@@ -166,13 +183,20 @@ class TicketController extends Controller
             'longitude'    => 'nullable|numeric',
             'published_at' => 'nullable|date',
             'images'       => 'nullable|array|max:5',
-            'images.*'     => 'image|max:2048',
+            'images.*'     => 'mimes:jpg,jpeg,png,webp,gif|max:2048'
         ]);
 
-        $category = Category::find($validated['category']);
-        $region   = $validated['region'] ? Region::find($validated['region']) : null;
+        $category = Category::where('site_id', $siteId)
+            ->findOrFail($validated['category']);
+
+        $region = null;
+        if (!empty($validated['region'])) {
+            $region = Region::where('site_id', $siteId)
+                ->findOrFail($validated['region']);
+        }
 
         $ticket = Ticket::create([
+            'site_id'       => $siteId,
             'Title'         => $validated['title'],
             'Description'   => $validated['description'],
             'Sentiment'     => $validated['sentiment'],
@@ -192,16 +216,28 @@ class TicketController extends Controller
         ]);
         
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $index => $file) {
-                $path = $file->store('tickets', 'public');
+    foreach ($request->file('images') as $index => $file) {
+        logger()->info('Processing ticket image', [
+            'index'      => $index,
+            'name'       => $file->getClientOriginalName(),
+            'mime'       => $file->getMimeType(),
+        ]);
 
-                $ticket->images()->create([
-                    'Path'          => $path,
-                    'Description' => $file->getClientOriginalName(),
-                    'Order'         => $index,
-                ]);
-            }
-        }
+        $path = $file->store('tickets', 'public');
+
+        logger()->info('Stored ticket image', [
+            'index' => $index,
+            'path'  => $path,
+        ]);
+
+        $ticket->images()->create([
+            'site_id'     => $siteId,
+            'Path'        => $path,
+            'Description' => $file->getClientOriginalName(),
+            'Order'       => $index,
+        ]);
+    }
+}
 
         return redirect()
             ->route('tickets.index')
@@ -214,8 +250,16 @@ class TicketController extends Controller
      */
     public function showWeb($id)
     {
-        $ticket = Ticket::with(['creator', 'images'])->findOrFail($id);
-        $contacts = Contact::orderBy('Name')->get();
+        $siteId = Auth::user()->site_id;
+
+        $ticket = Ticket::with(['creator', 'images'])
+            ->where('site_id', $siteId)
+            ->findOrFail($id);
+
+        $contacts = Contact::where('site_id', $siteId)
+            ->orderBy('Name')
+            ->get();
+
         $ticket->increment('ViewCount');
 
         return view('tickets.show', compact('ticket', 'contacts'));
@@ -226,9 +270,19 @@ class TicketController extends Controller
      */
     public function editWeb($id)
     {
-        $ticket = Ticket::with('images')->findOrFail($id);
-        $categories = Category::orderBy('Name')->get();
-        $regions    = Region::orderBy('Name')->get();
+        $siteId = Auth::user()->site_id;
+
+        $ticket = Ticket::with('images')
+            ->where('site_id', $siteId)
+            ->findOrFail($id);
+
+        $categories = Category::where('site_id', $siteId)
+            ->orderBy('Name')
+            ->get();
+
+        $regions = Region::where('site_id', $siteId)
+            ->orderBy('Name')
+        ->get();
 
         return view('tickets.edit', compact('ticket', 'categories', 'regions'));
     }
@@ -238,7 +292,9 @@ class TicketController extends Controller
      */
     public function updateWeb(Request $request, $id)
     {
-        $ticket = Ticket::findOrFail($id);
+        $siteId = Auth::user()->site_id;
+
+        $ticket = Ticket::where('site_id', $siteId)->findOrFail($id);
 
         if ($ticket->Created != Auth::id() && Auth::user()->role !== 'admin') {
             return redirect()->route('tickets.index')->with('error', 'Unauthorized to update this ticket');
@@ -257,7 +313,8 @@ class TicketController extends Controller
             'latitude'     => 'nullable|numeric',
             'longitude'    => 'nullable|numeric',
             'published_at' => 'nullable|date',
-            'image'        => 'nullable|image|max:2048',
+            'image'        => 'nullable|array|max:5',
+            'images.*'     => 'mimes:jpg,jpeg,png,webp,gif|max:2048'
         ]);
 
         $updateData = [];
@@ -293,6 +350,26 @@ class TicketController extends Controller
 
         $ticket->update($updateData);
 
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $index => $file) {
+                logger()->info('Processing ticket image (update)', [
+                    'ticket_id' => $ticket->id,
+                    'index'     => $index,
+                    'name'      => $file->getClientOriginalName(),
+                    'mime'      => $file->getMimeType(),
+                ]);
+
+                $path = $file->store('tickets', 'public');
+
+                $ticket->images()->create([
+                    'site_id'     => $siteId,
+                    'Path'        => $path,
+                    'Description' => $file->getClientOriginalName(),
+                    'Order'       => $ticket->images()->max('Order') + 1 + $index,
+                ]);
+            }
+        }
+
         return redirect()->route('tickets.index')->with('success', 'Berita berhasil diupdate');
     }
 
@@ -302,7 +379,9 @@ class TicketController extends Controller
      */
     public function destroyWeb($id)
     {
-        $ticket = Ticket::findOrFail($id);
+        $siteId = Auth::user()->site_id;
+
+        $ticket = Ticket::where('site_id', $siteId)->findOrFail($id);
         
         if ($ticket->Created != Auth::id() && Auth::user()->role !== 'admin') {
             return redirect()->route('tickets.index')->with('error', 'Unauthorized to delete this ticket');
@@ -318,6 +397,8 @@ class TicketController extends Controller
      */
     public function store(Request $request)
     {
+        $siteId = Auth::user()->site_id;
+
         $validator = Validator::make($request->all(), [
             'title'        => 'required|string|max:255',
             'description'  => 'required|string',
@@ -341,10 +422,13 @@ class TicketController extends Controller
         }
 
         try {
-            $category = Category::find($request->category);
-            $region   = $request->region ? Region::find($request->region) : null;
+            $category = Category::where('site_id', $siteId)->findOrFail($request->category);
+            $region = $request->region
+                ? Region::where('site_id', $siteId)->findOrFail($request->region)
+                : null;
 
             $ticket = Ticket::create([
+                'site_id'       => $siteId,
                 'Title'         => $request->title,
                 'Description'   => $request->description,
                 'Sentiment'     => $request->sentiment,
@@ -384,7 +468,12 @@ class TicketController extends Controller
     public function show($id)
     {
         try {
-            $ticket = Ticket::with('creator')->findOrFail($id);
+            $siteId = Auth::user()->site_id;
+
+            $ticket = Ticket::with('creator')
+                ->where('site_id', $siteId)
+                ->findOrFail($id);
+
             $ticket->increment('ViewCount');  
 
             return response()->json([
@@ -405,9 +494,11 @@ class TicketController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $ticket = Ticket::findOrFail($id);
+            $siteId = Auth::user()->site_id;
 
-            if ($ticket->Created != Auth::id() && Auth::user()->role !== 'admin') {  
+            $ticket = Ticket::where('site_id', $siteId)->findOrFail($id);
+
+            if ($ticket->Created != Auth::id() && Auth::user()->role !== 'admin') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized to update this ticket'
@@ -432,7 +523,7 @@ class TicketController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'errors' => $validator->errors()
+                    'errors'  => $validator->errors()
                 ], 422);
             }
 
@@ -442,23 +533,28 @@ class TicketController extends Controller
             if ($request->has('description'))  $updateData['Description'] = $request->description;
             if ($request->has('sentiment'))    $updateData['Sentiment']   = $request->sentiment;
             if ($request->has('actor'))        $updateData['Actor']       = $request->actor;
+
             if ($request->has('category')) {
-                $updateData['CategoryId'] = $request->category;
-                $category = Category::find($request->category);
-                $updateData['Category']   = $category?->Name;
+                $category = Category::where('site_id', $siteId)->findOrFail($request->category);
+                $updateData['CategoryId'] = $category->id;
+                $updateData['Category']   = $category->Name;
             }
 
             if ($request->has('priority'))     $updateData['Priority']    = $request->priority;
             if ($request->has('tag'))          $updateData['Tag']         = $request->tag;
+
             if ($request->has('region')) {
-                $updateData['RegionId'] = $request->region;
-                $region = $request->region ? Region::find($request->region) : null;
+                $region = $request->region
+                    ? Region::where('site_id', $siteId)->findOrFail($request->region)
+                    : null;
+
+                $updateData['RegionId'] = $region?->id;
                 $updateData['Region']   = $region?->Name;
             }
-            
-            if ($request->has('location'))     $updateData['Location']    = $request->location;
-            if ($request->has('latitude'))     $updateData['Latitude']    = $request->latitude;
-            if ($request->has('longitude'))    $updateData['Longitude']   = $request->longitude;
+
+            if ($request->has('location'))     $updateData['Location']     = $request->location;
+            if ($request->has('latitude'))     $updateData['Latitude']     = $request->latitude;
+            if ($request->has('longitude'))    $updateData['Longitude']    = $request->longitude;
             if ($request->has('published_at')) $updateData['PublishedDate'] = $request->published_at;
 
             $ticket->update($updateData);
@@ -466,14 +562,14 @@ class TicketController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Ticket updated successfully',
-                'data' => new TicketResource($ticket->load('creator'))
+                'data'    => new TicketResource($ticket->load('creator'))
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Ticket not found or update failed',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 404);
         }
     }
@@ -484,9 +580,11 @@ class TicketController extends Controller
     public function destroy($id)
     {
         try {
-            $ticket = Ticket::findOrFail($id);
+            $siteId = Auth::user()->site_id;
 
-            if ($ticket->Created != Auth::id() && Auth::user()->role !== 'admin') {  
+            $ticket = Ticket::where('site_id', $siteId)->findOrFail($id);
+
+            if ($ticket->Created != Auth::id() && Auth::user()->role !== 'admin') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized to delete this ticket'
@@ -508,29 +606,34 @@ class TicketController extends Controller
         }
     }
 
+
     /**
      * Get statistics for dashboard
      */
     public function statistics()
     {
+        $siteId = Auth::user()->site_id;
+
+        $base = Ticket::where('site_id', $siteId);
+
         $stats = [
-            'total' => Ticket::count(),
+            'total' => (clone $base)->count(),
             'by_sentiment' => [
-                'positive' => Ticket::where('Sentiment', 'positive')->count(),    
-                'neutral' => Ticket::where('Sentiment', 'neutral')->count(),      
-                'negative' => Ticket::where('Sentiment', 'negative')->count(),    
+                'positive' => (clone $base)('Sentiment', 'positive')->count(),    
+                'neutral' => (clone $base)('Sentiment', 'neutral')->count(),      
+                'negative' => (clone $base)('Sentiment', 'negative')->count(),    
             ],
             'by_priority' => [
-                'high' => Ticket::where('Priority', 'high')->count(),              
-                'medium' => Ticket::where('Priority', 'medium')->count(),          
-                'low' => Ticket::where('Priority', 'low')->count(),                
+                'high' => (clone $base)('Priority', 'high')->count(),              
+                'medium' => (clone $base)('Priority', 'medium')->count(),          
+                'low' => (clone $base)('Priority', 'low')->count(),                
             ],
             'by_region' => [                                                      
-                'jakarta' => Ticket::where('Region', 'LIKE', '%jakarta%')->count(),
-                'bandung' => Ticket::where('Region', 'LIKE', '%bandung%')->count(),
-                'surabaya' => Ticket::where('Region', 'LIKE', '%surabaya%')->count(),
+                'jakarta' => (clone $base)('Region', 'LIKE', '%jakarta%')->count(),
+                'bandung' => (clone $base)('Region', 'LIKE', '%bandung%')->count(),
+                'surabaya' => (clone $base)('Region', 'LIKE', '%surabaya%')->count(),
             ],
-            'high_priority_negative' => Ticket::where('Priority', 'high')
+            'high_priority_negative' => (clone $base)('Priority', 'high')
                                                ->where('Sentiment', 'negative')
                                                ->count(),
             'popular_categories' => Ticket::select('Category')                    

@@ -11,6 +11,7 @@ class TicketImage extends Model
     
     protected $fillable = [
         'TicketId',
+        'site_id',
         'Path',
         'Description',
         'Order',

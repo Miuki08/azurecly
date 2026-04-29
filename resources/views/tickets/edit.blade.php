@@ -39,12 +39,14 @@
                                         <span>Judul Berita</span>
                                         <span class="text-[11px] text-red-500">required</span>
                                     </label>
-                                    <input type="text"
-                                           name="title"
-                                           id="title"
-                                           value="{{ old('title', $ticket->Title) }}"
-                                           required
-                                           class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    <input
+                                        type="text"
+                                        name="title"
+                                        id="title"
+                                        value="{{ old('title', $ticket->Title) }}"
+                                        required
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >
                                     @error('title')
                                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                                     @enderror
@@ -56,11 +58,13 @@
                                         <span>Deskripsi</span>
                                         <span class="text-[11px] text-red-500">required</span>
                                     </label>
-                                    <textarea name="description"
-                                              id="description"
-                                              rows="8"
-                                              required
-                                              class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">{{ old('description', $ticket->Description) }}</textarea>
+                                    <textarea
+                                        name="description"
+                                        id="description"
+                                        rows="8"
+                                        required
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >{{ old('description', $ticket->Description) }}</textarea>
                                     @error('description')
                                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                                     @enderror
@@ -73,13 +77,12 @@
                                             Media
                                         </label>
                                         <small class="text-[11px] text-gray-400">
-                                            {{-- jumlah lama + baru (approx) --}}
-                                            <span x-text="{{ $ticket->images->count() }} + files.length"></span> of 5 images
+                                            <span x-text="existingCount + files.length"></span> of 5 images
                                         </small>
                                     </div>
 
                                     <p class="text-[11px] text-gray-400 mb-2">
-                                        Gambar yang sudah diupload akan tetap tersimpan. Tambah gambar baru jika diperlukan (maks. total 5).
+                                        Gambar yang sudah diupload akan tetap tersimpan. Tambah gambar baru jika diperlukan (maks. total 5, masing-masing maks. 2MB).
                                     </p>
 
                                     <div class="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-2.5">
@@ -88,8 +91,10 @@
                                             @foreach($ticket->images as $img)
                                                 <div class="relative">
                                                     <div class="w-full aspect-square rounded-md overflow-hidden border border-gray-200 bg-white">
-                                                        <img src="{{ asset('storage/'.$img->Path) }}"
-                                                             class="w-full h-full object-cover">
+                                                        <img
+                                                            src="{{ asset('storage/'.$img->Path) }}"
+                                                            class="w-full h-full object-cover"
+                                                        >
                                                     </div>
                                                     {{-- TODO: tombol hapus per image bisa ditambah di sini nanti --}}
                                                 </div>
@@ -99,19 +104,20 @@
                                             <template x-for="(file, index) in files" :key="index">
                                                 <div class="relative">
                                                     <div class="w-full aspect-square rounded-md overflow-hidden border border-gray-200 bg-white">
-                                                        <img :src="file.url"
-                                                             class="w-full h-full object-cover">
+                                                        <img :src="file.url" class="w-full h-full object-cover">
                                                     </div>
-                                                    <button type="button"
-                                                            @click.stop="remove(index)"
-                                                            class="absolute top-1 left-1 bg-white/90 hover:bg-red-500 hover:text-white text-gray-600 border border-gray-200 rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow">
+                                                    <button
+                                                        type="button"
+                                                        @click.stop="remove(index)"
+                                                        class="absolute top-1 left-1 bg-white/90 hover:bg-red-500 hover:text-white text-gray-600 border border-gray-200 rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow"
+                                                    >
                                                         &times;
                                                     </button>
                                                 </div>
                                             </template>
 
                                             {{-- Kotak + untuk upload baru, batasi supaya tidak lebih dari 5 total --}}
-                                            <template x-if="(files.length + {{ $ticket->images->count() }}) < maxFiles">
+                                            <template x-if="(files.length + existingCount) < maxFiles">
                                                 <div
                                                     x-on:dragover.prevent="dragging = true"
                                                     x-on:dragleave.prevent="dragging = false"
@@ -172,11 +178,17 @@
                                         <span>Kategori</span>
                                         <span class="text-[11px] text-red-500">required</span>
                                     </label>
-                                    <select name="category" id="category" required
-                                            class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    <select
+                                        name="category"
+                                        id="category"
+                                        required
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >
                                         @foreach($categories as $category)
-                                            <option value="{{ $category->id }}"
-                                                {{ old('category', $ticket->CategoryId) == $category->id ? 'selected' : '' }}>
+                                            <option
+                                                value="{{ $category->id }}"
+                                                {{ old('category', $ticket->CategoryId) == $category->id ? 'selected' : '' }}
+                                            >
                                                 {{ $category->Name }}
                                             </option>
                                         @endforeach
@@ -192,8 +204,12 @@
                                         <span>Sentiment</span>
                                         <span class="text-[11px] text-red-500">required</span>
                                     </label>
-                                    <select name="sentiment" id="sentiment" required
-                                            class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    <select
+                                        name="sentiment"
+                                        id="sentiment"
+                                        required
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >
                                         <option value="positive" {{ old('sentiment', $ticket->Sentiment) == 'positive' ? 'selected' : '' }}>Positive</option>
                                         <option value="neutral"  {{ old('sentiment', $ticket->Sentiment) == 'neutral'  ? 'selected' : '' }}>Neutral</option>
                                         <option value="negative" {{ old('sentiment', $ticket->Sentiment) == 'negative' ? 'selected' : '' }}>Negative</option>
@@ -209,8 +225,12 @@
                                         <span>Priority</span>
                                         <span class="text-[11px] text-red-500">required</span>
                                     </label>
-                                    <select name="priority" id="priority" required
-                                            class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    <select
+                                        name="priority"
+                                        id="priority"
+                                        required
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >
                                         <option value="high"   {{ old('priority', $ticket->Priority) == 'high'   ? 'selected' : '' }}>High</option>
                                         <option value="medium" {{ old('priority', $ticket->Priority) == 'medium' ? 'selected' : '' }}>Medium</option>
                                         <option value="low"    {{ old('priority', $ticket->Priority) == 'low'    ? 'selected' : '' }}>Low</option>
@@ -225,9 +245,13 @@
                                     <label for="actor" class="block text-sm font-medium text-gray-700 mb-1">
                                         Aktor/Pelaku
                                     </label>
-                                    <input type="text" name="actor" id="actor"
-                                           value="{{ old('actor', $ticket->Actor) }}"
-                                           class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    <input
+                                        type="text"
+                                        name="actor"
+                                        id="actor"
+                                        value="{{ old('actor', $ticket->Actor) }}"
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >
                                     @error('actor')
                                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                                     @enderror
@@ -238,10 +262,14 @@
                                     <label for="tag" class="block text-sm font-medium text-gray-700 mb-1">
                                         Tag
                                     </label>
-                                    <input type="text" name="tag" id="tag"
-                                           value="{{ old('tag', $ticket->Tag) }}"
-                                           placeholder="misal: kebakaran, bandara, darurat"
-                                           class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    <input
+                                        type="text"
+                                        name="tag"
+                                        id="tag"
+                                        value="{{ old('tag', $ticket->Tag) }}"
+                                        placeholder="misal: kebakaran, bandara, darurat"
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >
                                     @error('tag')
                                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                                     @enderror
@@ -262,9 +290,11 @@
                                     </div>
                                 </div>
 
-                                <button type="button"
-                                        @click="openLocation = !openLocation"
-                                        class="inline-flex items-center px-2 py-1 border border-gray-200 rounded-md text-[11px] text-gray-500 hover:bg-gray-50">
+                                <button
+                                    type="button"
+                                    @click="openLocation = !openLocation"
+                                    class="inline-flex items-center px-2 py-1 border border-gray-200 rounded-md text-[11px] text-gray-500 hover:bg-gray-50"
+                                >
                                     <span x-show="openLocation" x-cloak>Sembunyikan</span>
                                     <span x-show="!openLocation" x-cloak>Tampilkan</span>
                                     <i x-show="openLocation" x-cloak data-lucide="chevron-up" class="w-3 h-3 ml-1"></i>
@@ -272,25 +302,32 @@
                                 </button>
                             </div>
 
-                            <div x-show="openLocation"
-                                 x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 -translate-y-1"
-                                 x-transition:enter-end="opacity-100 translate-y-0"
-                                 x-transition:leave="transition ease-in duration-100"
-                                 x-transition:leave-start="opacity-100 translate-y-0"
-                                 x-transition:leave-end="opacity-0 -translate-y-1"
-                                 class="px-5 py-5 space-y-4">
+                            <div
+                                x-show="openLocation"
+                                x-transition:enter="transition ease-out duration-150"
+                                x-transition:enter-start="opacity-0 -translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 -translate-y-1"
+                                class="px-5 py-5 space-y-4"
+                            >
                                 {{-- Region --}}
                                 <div>
                                     <label for="region" class="block text-sm font-medium text-gray-700 mb-1">
                                         Region
                                     </label>
-                                    <select name="region" id="region"
-                                            class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    <select
+                                        name="region"
+                                        id="region"
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >
                                         <option value="">Pilih Region</option>
                                         @foreach($regions as $region)
-                                            <option value="{{ $region->id }}"
-                                                {{ old('region', $ticket->RegionId) == $region->id ? 'selected' : '' }}>
+                                            <option
+                                                value="{{ $region->id }}"
+                                                {{ old('region', $ticket->RegionId) == $region->id ? 'selected' : '' }}
+                                            >
                                                 {{ $region->Name }}
                                             </option>
                                         @endforeach
@@ -305,10 +342,14 @@
                                     <label for="location" class="block text-sm font-medium text-gray-700 mb-1">
                                         Lokasi
                                     </label>
-                                    <input type="text" name="location" id="location"
-                                           value="{{ old('location', $ticket->Location) }}"
-                                           placeholder="misal: Bandara Soekarno-Hatta"
-                                           class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    <input
+                                        type="text"
+                                        name="location"
+                                        id="location"
+                                        value="{{ old('location', $ticket->Location) }}"
+                                        placeholder="misal: Bandara Soekarno-Hatta"
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >
                                     @error('location')
                                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                                     @enderror
@@ -319,10 +360,14 @@
                                     <label for="latitude" class="block text-sm font-medium text-gray-700 mb-1">
                                         Latitude
                                     </label>
-                                    <input type="text" name="latitude" id="latitude"
-                                           value="{{ old('latitude', $ticket->Latitude) }}"
-                                           placeholder="contoh: -6.2088"
-                                           class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    <input
+                                        type="text"
+                                        name="latitude"
+                                        id="latitude"
+                                        value="{{ old('latitude', $ticket->Latitude) }}"
+                                        placeholder="contoh: -6.2088"
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >
                                     @error('latitude')
                                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                                     @enderror
@@ -333,10 +378,14 @@
                                     <label for="longitude" class="block text-sm font-medium text-gray-700 mb-1">
                                         Longitude
                                     </label>
-                                    <input type="text" name="longitude" id="longitude"
-                                           value="{{ old('longitude', $ticket->Longitude) }}"
-                                           placeholder="contoh: 106.8456"
-                                           class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    <input
+                                        type="text"
+                                        name="longitude"
+                                        id="longitude"
+                                        value="{{ old('longitude', $ticket->Longitude) }}"
+                                        placeholder="contoh: 106.8456"
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >
                                     @error('longitude')
                                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                                     @enderror
@@ -347,9 +396,13 @@
                                     <label for="published_at" class="block text-sm font-medium text-gray-700 mb-1">
                                         Tanggal Publikasi
                                     </label>
-                                    <input type="datetime-local" name="published_at" id="published_at"
-                                           value="{{ old('published_at', $ticket->PublishedDate ? $ticket->PublishedDate->format('Y-m-d\TH:i') : '') }}"
-                                           class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    <input
+                                        type="datetime-local"
+                                        name="published_at"
+                                        id="published_at"
+                                        value="{{ old('published_at', $ticket->PublishedDate ? $ticket->PublishedDate->format('Y-m-d\TH:i') : '') }}"
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    >
                                     @error('published_at')
                                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                                     @enderror
@@ -361,12 +414,16 @@
 
                 {{-- Tombol submit --}}
                 <div class="flex justify-end gap-3 pt-3">
-                    <a href="{{ route('tickets.index') }}"
-                       class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition">
+                    <a
+                        href="{{ route('tickets.index') }}"
+                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
+                    >
                         Batal
                     </a>
-                    <button type="submit"
-                            class="px-4 py-2 bg-sea-blue-600 hover:bg-sea-blue-700 text-white rounded-lg text-sm font-medium inline-flex items-center gap-1 transition">
+                    <button
+                        type="submit"
+                        class="px-4 py-2 bg-sea-blue-600 hover:bg-sea-blue-700 text-white rounded-lg text-sm font-medium inline-flex items-center gap-1 transition"
+                    >
                         <i data-lucide="save" class="w-4 h-4"></i>
                         Update Berita
                     </button>
@@ -376,6 +433,7 @@
     </div>
 
     @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="https://unpkg.com/lucide@latest"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
@@ -385,10 +443,13 @@
             });
 
             function imageUploader() {
+                const existingCount = {{ $ticket->images->count() }};
                 return {
+                    existingCount,
                     files: [],
                     dragging: false,
                     maxFiles: 5,
+                    maxSize: 2 * 1024 * 1024, 
 
                     handleInput(e) {
                         const selected = Array.from(e.target.files);
@@ -404,16 +465,47 @@
                     addFiles(newFiles) {
                         const imageFiles = newFiles.filter(file => file.type.startsWith('image/'));
 
+                        const oversized = imageFiles.filter(file => file.size > this.maxSize);
+                        if (oversized.length > 0) {
+                            const names = oversized.map(f => f.name).join(', ');
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'File terlalu besar',
+                                html: `File berikut melebihi 2 MB:<br><b>${names}</b><br><br>` +
+                                      `Setiap file gambar maksimal 2 MB.`,
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#2563eb',
+                                showClass: { popup: 'swal2-show-custom' },
+                                hideClass: { popup: 'swal2-hide-custom' },
+                                backdrop: 'rgba(15,23,42,0.35)',
+                            });
+                        }
+
+                        const validFiles = imageFiles.filter(file => file.size <= this.maxSize);
+
                         let combined = [
                             ...this.files,
-                            ...imageFiles.map(file => ({
+                            ...validFiles.map(file => ({
                                 file,
                                 url: URL.createObjectURL(file),
                             }))
                         ];
 
-                        if (combined.length > this.maxFiles) {
-                            combined = combined.slice(0, this.maxFiles);
+                        if (combined.length + this.existingCount > this.maxFiles) {
+                            const allowedNew = this.maxFiles - this.existingCount;
+                            combined = combined.slice(0, Math.max(allowedNew, 0));
+
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Maksimal 5 gambar',
+                                text: 'Total gambar (lama + baru) tidak boleh lebih dari 5.',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#2563eb',
+                                showClass: { popup: 'swal2-show-custom' },
+                                hideClass: { popup: 'swal2-hide-custom' },
+                                backdrop: 'rgba(15,23,42,0.35)',
+                            });
                         }
 
                         this.files = combined;
@@ -440,5 +532,58 @@
                 }
             }
         </script>
+    @endpush>
+
+    @push('styles')
+        <style>
+            .swal2-popup {
+                width: 22rem !important;
+                padding: 1.25rem 1.5rem !important;
+                border-radius: 0.75rem !important;
+                font-size: 0.85rem !important;
+            }
+            .swal2-title {
+                font-size: 1rem !important;
+                font-weight: 600 !important;
+            }
+            .swal2-html-container {
+                font-size: 0.8rem !important;
+                margin-top: 0.5rem !important;
+            }
+            .swal2-icon {
+                transform: scale(0.8);
+                margin-top: 0.25rem;
+                margin-bottom: 0.25rem;
+            }
+            .swal2-actions {
+                margin-top: 0.75rem !important;
+            }
+            .swal2-show-custom {
+                animation: swal2-zoom-in-up 0.25s ease-out forwards;
+            }
+            .swal2-hide-custom {
+                animation: swal2-zoom-out-down 0.2s ease-in forwards;
+            }
+            @keyframes swal2-zoom-in-up {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px) scale(0.85);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+            @keyframes swal2-zoom-out-down {
+                from {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateY(10px) scale(0.9);
+                }
+            }
+        </style>
     @endpush
 </x-app-layout>

@@ -3,30 +3,30 @@
         <div class="flex justify-between items-center">
             <div>
                 <h2 class="font-semibold text-xl text-sea-blue-800 leading-tight">
-                    News Management
+                    @if($mode === 'humas')
+                        My Escalation Logs
+                    @else
+                        Escalation Logs
+                    @endif
                 </h2>
                 <!-- <p class="text-xs text-gray-500 mt-0.5">
-                    Kelola berita, filter berdasarkan sentiment, priority, dan kategori.
+                    @if($mode === 'humas')
+                        Riwayat eskalasi berita yang kamu lakukan.
+                    @else
+                        Riwayat semua eskalasi berita pada site ini.
+                    @endif
                 </p> -->
             </div>
 
             <div class="flex items-center gap-2">
-                {{-- Toggle Filter  --}}
-               <button
+                <button
                     type="button"
                     id="toggle-filter"
                     class="inline-flex items-center justify-center px-3 py-2 rounded-lg border border-sea-blue-100 text-sea-blue-700 bg-white hover:bg-sea-blue-50 hover:border-sea-blue-200 transition-colors duration-150 text-xs"
-                    aria-label="Toggle filters"
                 >
                     <i data-lucide="filter" class="w-4 h-4 mr-1"></i>
                     <span class="hidden sm:inline">Filter</span>
                 </button>
-
-                <a href="{{ route('tickets.create') }}"
-                   class="inline-flex items-center gap-1.5 bg-sea-blue-600 hover:bg-sea-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition duration-150">
-                    <i data-lucide="plus" class="w-4 h-4"></i>
-                    Add News
-                </a>
             </div>
         </div>
     </x-slot>
@@ -34,7 +34,7 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            {{-- Filter Section (hidden by default) --}}
+            {{-- Filter Section --}}
             <div id="filter-panel" class="bg-white border border-sea-blue-100 rounded-xl shadow-sm mb-4 px-3 py-3 sm:px-4 sm:py-4 hidden">
                 <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs sm:text-sm">
                     {{-- Search --}}
@@ -44,58 +44,49 @@
                             type="text"
                             name="search"
                             value="{{ request('search') }}"
-                            placeholder="Title, description..."
+                            placeholder="Title, recipient, contact..."
                             class="w-full rounded-lg border-gray-200 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-xs py-1.5"
                         >
                     </div>
 
-                    {{-- Sentiment --}}
+                    {{-- Channel --}}
                     <div class="space-y-1">
-                        <label class="block font-medium text-gray-600 text-xs">Sentiment</label>
+                        <label class="block font-medium text-gray-600 text-xs">Channel</label>
                         <select
-                            name="sentiment"
+                            name="channel"
                             class="w-full rounded-lg border-gray-200 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-xs py-1.5"
                         >
                             <option value="">All</option>
-                            <option value="positive" {{ request('sentiment') == 'positive' ? 'selected' : '' }}>Positive</option>
-                            <option value="neutral"  {{ request('sentiment') == 'neutral'  ? 'selected' : '' }}>Neutral</option>
-                            <option value="negative" {{ request('sentiment') == 'negative' ? 'selected' : '' }}>Negative</option>
+                            <option value="email"    {{ request('channel') == 'email' ? 'selected' : '' }}>Email</option>
+                            <option value="whatsapp" {{ request('channel') == 'whatsapp' ? 'selected' : '' }}>WhatsApp</option>
+                            <option value="both"     {{ request('channel') == 'both' ? 'selected' : '' }}>Both</option>
                         </select>
                     </div>
 
-                    {{-- Priority --}}
+                    {{-- Status --}}
                     <div class="space-y-1">
-                        <label class="block font-medium text-gray-600 text-xs">Priority</label>
+                        <label class="block font-medium text-gray-600 text-xs">Status</label>
                         <select
-                            name="priority"
+                            name="status"
                             class="w-full rounded-lg border-gray-200 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-xs py-1.5"
                         >
                             <option value="">All</option>
-                            <option value="high"   {{ request('priority') == 'high'   ? 'selected' : '' }}>High</option>
-                            <option value="medium" {{ request('priority') == 'medium' ? 'selected' : '' }}>Medium</option>
-                            <option value="low"    {{ request('priority') == 'low'    ? 'selected' : '' }}>Low</option>
+                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="sent"    {{ request('status') == 'sent'    ? 'selected' : '' }}>Sent</option>
+                            <option value="failed"  {{ request('status') == 'failed'  ? 'selected' : '' }}>Failed</option>
                         </select>
                     </div>
 
-                    {{-- Category (select dari tabel) --}}
-                    <div class="space-y-1">
-                        <label class="block font-medium text-gray-600 text-xs">Category</label>
-                        <select
-                            name="category"
-                            class="w-full rounded-lg border-gray-200 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-xs py-1.5"
-                        >
-                            <option value="">All</option>
-                            @foreach($categories as $category)
-                                <option value="{{ $category->id }}"
-                                    {{ request('category') == $category->id ? 'selected' : '' }}>
-                                    {{ $category->Name }}
-                                </option>
-                            @endforeach
-                        </select>
+                    {{-- Info text --}}
+                    <div class="space-y-1 md:col-span-2">
+                        <label class="block font-medium text-gray-600 text-xs">Info</label>
+                        <p class="text-[11px] text-gray-500">
+                            Menampilkan log eskalasi berdasarkan waktu terkirim (SentDate) dan waktu dibuat.
+                        </p>
                     </div>
 
                     {{-- Actions --}}
-                    <div class="flex items-end gap-2">
+                    <div class="flex items-end gap-2 md:col-span-1">
                         <button
                             type="submit"
                             class="inline-flex items-center justify-center gap-1.5 bg-sea-blue-600 hover:bg-sea-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition duration-150"
@@ -104,7 +95,7 @@
                             Filter
                         </button>
                         <a
-                            href="{{ route('tickets.index') }}"
+                            href="{{ route($mode === 'humas' ? 'escalations.my' : 'escalations.index') }}"
                             class="inline-flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium transition duration-150"
                         >
                             Reset
@@ -120,25 +111,25 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                                    Title
+                                    Ticket
                                 </th>
                                 <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                                    Location
+                                    Channel
                                 </th>
                                 <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                                    Category
+                                    Recipient
                                 </th>
                                 <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                                    Sentiment
+                                    Contact
                                 </th>
                                 <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                                    Priority
+                                    Status
                                 </th>
                                 <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                                    Views
+                                    Sent At
                                 </th>
                                 <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                                    Date
+                                    By
                                 </th>
                                 <th class="px-6 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
                                     Actions
@@ -146,73 +137,101 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
-                            @forelse($tickets as $ticket)
+                            @forelse($logs as $log)
                                 <tr class="hover:bg-sea-blue-50/40 transition-colors duration-150">
+                                    {{-- Ticket --}}
                                     <td class="px-6 py-4 text-sm">
-                                        <a href="{{ route('tickets.show', $ticket->id) }}"
-                                           class="text-sea-blue-700 hover:text-sea-blue-900 font-medium hover:underline">
-                                            {{ $ticket->Title }}
-                                        </a>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        {{ $ticket->Location ?? '-' }}
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        {{ $ticket->Category }}
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 text-[11px] font-medium rounded-full
-                                            {{ $ticket->Sentiment == 'positive'
-                                                ? 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-100'
-                                                : ($ticket->Sentiment == 'negative'
-                                                    ? 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-100'
-                                                    : 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-100') }}">
-                                            {{ ucfirst($ticket->Sentiment) }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 text-[11px] font-medium rounded-full
-                                            {{ $ticket->Priority == 'high'
-                                                ? 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-100'
-                                                : ($ticket->Priority == 'medium'
-                                                    ? 'bg-accent/10 text-accent ring-1 ring-inset ring-accent/20'
-                                                    : 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-100') }}">
-                                            {{ ucfirst($ticket->Priority) }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        {{ $ticket->ViewCount }}
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        {{ $ticket->PublishedDate ? $ticket->PublishedDate->format('d M Y') : '-' }}
-                                    </td>
-                                    <td class="px-6 py-4 text-right space-x-2">
-                                        <a href="{{ route('tickets.edit', $ticket->id) }}"
-                                           class="inline-flex items-center justify-center w-8 h-8 rounded-full text-sea-blue-700 hover:bg-sea-blue-50 transition-colors duration-150">
-                                            <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                        </a>
-                                        <form action="{{ route('tickets.destroy', $ticket->id) }}" method="POST" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button
-                                                type="submit"
-                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full text-red-600 hover:bg-red-50 transition-colors duration-150"
-                                                onclick="return confirm('Are you sure you want to delete this news?')"
+                                        @if($log->ticket)
+                                            <a
+                                                href="{{ route('tickets.show', $log->ticket->id) }}"
+                                                class="text-sea-blue-700 hover:text-sea-blue-900 font-medium hover:underline"
                                             >
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </form>
+                                                {{ $log->ticket->Title }}
+                                            </a>
+                                        @else
+                                            <span class="text-gray-400 text-xs italic">Ticket deleted</span>
+                                        @endif
+                                    </td>
+
+                                    {{-- Channel --}}
+                                    <td class="px-6 py-4 text-sm">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 text-[11px] font-medium rounded-full
+                                            @if($log->Channel === 'email')
+                                                bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-100
+                                            @elseif($log->Channel === 'whatsapp')
+                                                bg-green-50 text-green-700 ring-1 ring-inset ring-green-100
+                                            @else
+                                                bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-100
+                                            @endif
+                                        ">
+                                            {{ ucfirst($log->Channel) }}
+                                        </span>
+                                    </td>
+
+                                    {{-- Recipient --}}
+                                    <td class="px-6 py-4 text-sm text-gray-700">
+                                        {{ $log->Recipient ?? '-' }}
+                                    </td>
+
+                                    {{-- Contact --}}
+                                    <td class="px-6 py-4 text-sm text-gray-700">
+                                        @if($log->contact)
+                                            {{ $log->contact->Name }}
+                                        @else
+                                            <span class="text-gray-400 text-xs italic">Manual recipient</span>
+                                        @endif
+                                    </td>
+
+                                    {{-- Status --}}
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 text-[11px] font-medium rounded-full
+                                            @if($log->Status === 'sent')
+                                                bg-green-50 text-green-700 ring-1 ring-inset ring-green-100
+                                            @elseif($log->Status === 'failed')
+                                                bg-red-50 text-red-700 ring-1 ring-inset ring-red-100
+                                            @else
+                                                bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-100
+                                            @endif
+                                        ">
+                                            {{ ucfirst($log->Status) }}
+                                        </span>
+                                    </td>
+
+                                    {{-- SentDate --}}
+                                    <td class="px-6 py-4 text-sm text-gray-600">
+                                        @if($log->SentDate)
+                                            {{ $log->SentDate->format('d M Y H:i') }}
+                                        @else
+                                            <span class="text-gray-400 text-xs italic">Not sent</span>
+                                        @endif
+                                    </td>
+
+                                    {{-- Escalated by --}}
+                                    <td class="px-6 py-4 text-sm text-gray-700">
+                                        {{ $log->escalator?->name ?? '-' }}
+                                    </td>
+
+                                    {{-- Actions (view-only) --}}
+                                    <td class="px-6 py-4 text-right space-x-2">
+                                        @if($log->ticket)
+                                            <a
+                                                href="{{ route('tickets.show', $log->ticket->id) }}"
+                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full text-sea-blue-700 hover:bg-sea-blue-50 transition-colors duration-150"
+                                                title="Lihat ticket"
+                                            >
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                            </a>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
                                     <td colspan="8" class="px-6 py-12 text-center text-gray-500">
                                         <i data-lucide="inbox" class="w-10 h-10 mx-auto text-gray-300 mb-3"></i>
-                                        <p class="text-sm font-medium">No news data yet</p>
-                                        <a href="{{ route('tickets.create') }}"
-                                           class="mt-2 inline-block text-sea-blue-700 hover:text-sea-blue-900 text-sm">
-                                            Add the first news
-                                        </a>
+                                        <p class="text-sm font-medium">Belum ada eskalasi berita</p>
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            Coba lakukan eskalasi dari salah satu berita untuk melihat log di sini.
+                                        </p>
                                     </td>
                                 </tr>
                             @endforelse
@@ -222,7 +241,7 @@
 
                 {{-- Pagination --}}
                 <div class="px-4 sm:px-6 py-3 border-t border-gray-100">
-                    {{ $tickets->links() }}
+                    {{ $logs->links() }}
                 </div>
             </div>
         </div>

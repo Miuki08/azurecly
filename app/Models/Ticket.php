@@ -11,7 +11,7 @@ class Ticket extends Model
     use HasFactory;
 
     protected $fillable = [
-        'Title', 'Description', 'Image', 'Sentiment', 'Actor', 'Category', 'CategoryId',
+        'site_id','Title', 'Description', 'Image', 'Sentiment', 'Actor', 'Category', 'CategoryId',
         'Priority', 'Tag', 'Region', 'RegionId', 'Location', 'Latitude', 'Longitude',
         'ViewCount', 'PublishedDate', 'EscalatedDate', 'Created'
     ];
@@ -20,6 +20,11 @@ class Ticket extends Model
         'PublishedDate' => 'datetime',
         'EscalatedDate' => 'datetime',
     ];
+
+    public function site()
+    {
+        return $this->belongsTo(Site::class);
+    }
 
     public function creator()
     {
@@ -62,6 +67,12 @@ class Ticket extends Model
     {
         return $query->where('Priority', 'high')
                      ->where('Sentiment', 'negative');
+    }
+
+    public function scopeForSite($query, Site|int $site)
+    {
+        $siteId = $site instanceof Site ? $site->id : $site;
+        return $query->where('site_id', $siteId);
     }
     
     /* 

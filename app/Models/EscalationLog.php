@@ -11,6 +11,7 @@ class EscalationLog extends Model
 
     protected $fillable = [
         'TicketId',
+        'site_id',
         'ContactId',
         'Channel',
         'Message',
@@ -24,6 +25,11 @@ class EscalationLog extends Model
     protected $casts = [
         'SentDate' => 'datetime',
     ];
+
+    public function site()
+    {
+        return $this->belongsTo(Site::class);
+    }
 
     public function ticket()
     {

@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class MediaDashboardController extends Controller
 {
-    public function index()
+ public function index()
     {
+        $siteId = Auth::user()->site_id;
+
         $latestTickets = Ticket::with(['images'])
+            ->where('site_id', $siteId)
             ->where('Sentiment', 'positive')
             ->orderByDesc('PublishedDate')
             ->orderByDesc('created_at')
@@ -18,6 +22,7 @@ class MediaDashboardController extends Controller
             ->get();
 
         $topActors = Ticket::select('Actor', DB::raw('count(*) as total'))
+            ->where('site_id', $siteId)
             ->whereNotNull('Actor')
             ->where('Actor', '!=', '')
             ->groupBy('Actor')
@@ -26,6 +31,7 @@ class MediaDashboardController extends Controller
             ->get();
 
         $topTags = Ticket::select('Tag', DB::raw('count(*) as total'))
+            ->where('site_id', $siteId)
             ->whereNotNull('Tag')
             ->where('Tag', '!=', '')
             ->groupBy('Tag')
@@ -34,6 +40,7 @@ class MediaDashboardController extends Controller
             ->get();
 
         $topRegions = Ticket::select('Region', DB::raw('count(*) as total'))
+            ->where('site_id', $siteId)
             ->whereNotNull('Region')
             ->where('Region', '!=', '')
             ->groupBy('Region')
@@ -49,3 +56,4 @@ class MediaDashboardController extends Controller
         ));
     }
 }
+

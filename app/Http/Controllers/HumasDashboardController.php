@@ -5,25 +5,32 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class HumasDashboardController extends Controller
 {
     public function index()
     {
+        $siteId = Auth::user()->site_id;
+
+        $base = Ticket::where('site_id', $siteId);
+
         $stats = [
-            'total'    => Ticket::count(),
-            'positive' => Ticket::where('Sentiment', 'positive')->count(),
-            'negative' => Ticket::where('Sentiment', 'negative')->count(),
-            'neutral'  => Ticket::where('Sentiment', 'neutral')->count(),
+            'total'    => (clone $base)->count(),
+            'positive' => (clone $base)->where('Sentiment', 'positive')->count(),
+            'negative' => (clone $base)->where('Sentiment', 'negative')->count(),
+            'neutral'  => (clone $base)->where('Sentiment', 'neutral')->count(),
         ];
 
         $latestTickets = Ticket::with(['images'])
+            ->where('site_id', $siteId)
             ->orderByDesc('PublishedDate')
             ->orderByDesc('created_at')
             ->limit(10)
             ->get();
 
         $topActors = Ticket::select('Actor', DB::raw('count(*) as total'))
+            ->where('site_id', $siteId)
             ->whereNotNull('Actor')
             ->where('Actor', '!=', '')
             ->groupBy('Actor')
@@ -32,6 +39,7 @@ class HumasDashboardController extends Controller
             ->get();
 
         $topTags = Ticket::select('Tag', DB::raw('count(*) as total'))
+            ->where('site_id', $siteId)
             ->whereNotNull('Tag')
             ->where('Tag', '!=', '')
             ->groupBy('Tag')
@@ -40,6 +48,7 @@ class HumasDashboardController extends Controller
             ->get();
 
         $topRegions = Ticket::select('Region', DB::raw('count(*) as total'))
+            ->where('site_id', $siteId)
             ->whereNotNull('Region')
             ->where('Region', '!=', '')
             ->groupBy('Region')

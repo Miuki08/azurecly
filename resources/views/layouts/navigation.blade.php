@@ -28,13 +28,13 @@
 
                 <!-- Navigation Links (Desktop) -->
                 <div class="hidden space-x-6 sm:-my-px sm:ms-10 sm:flex sm:items-center">
-                    {{-- Dashboard (selalu ada) --}}
+                    {{-- Dashboard --}}
                     <x-nav-link :href="route('dashboard')" :active="$isDashboard" class="flex items-center">
                         <i data-lucide="layout-dashboard" class="w-4 h-4 mr-1.5"></i>
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
-                    {{-- News hanya admin & humas --}}
+                    {{-- News --}}
                     @if(in_array($user->role, ['admin', 'humas']))
                         <x-nav-link :href="route('tickets.index')" :active="request()->routeIs('tickets.*')" class="flex items-center">
                             <i data-lucide="newspaper" class="w-4 h-4 mr-1.5"></i>
@@ -42,11 +42,44 @@
                         </x-nav-link>
                     @endif
 
-                    {{-- Contact hanya admin & humas (kalau memang begitu kebijakannya) --}}
+                    {{-- Contact --}}
                     @if(in_array($user->role, ['admin', 'humas']))
                         <x-nav-link :href="route('contacts.index')" :active="request()->routeIs('contacts.*')" class="flex items-center">
                             <i data-lucide="contact-2" class="w-4 h-4 mr-1.5"></i>
                             {{ __('Contact') }}
+                        </x-nav-link>
+                    @endif
+
+                    {{-- Escalation --}}
+                    @if($user->role === 'admin')
+                        <x-nav-link
+                            :href="route('escalations.index')"
+                            :active="request()->routeIs('escalations.index')"
+                            class="flex items-center"
+                        >
+                            <i data-lucide="logs" class="w-4 h-4 mr-1.5"></i>
+                            {{ __('Escalations') }}
+                        </x-nav-link>
+                    @elseif($user->role === 'humas')
+                        <x-nav-link
+                            :href="route('escalations.my')"
+                            :active="request()->routeIs('escalations.my')"
+                            class="flex items-center"
+                        >
+                            <i data-lucide="logs" class="w-4 h-4 mr-1.5"></i>
+                            {{ __('My Escalations') }}
+                        </x-nav-link>
+                    @endif
+                    
+                    {{-- Setting --}}
+                    @if($user->role === 'admin')
+                        <x-nav-link
+                            :href="route('admin.settings.index')"
+                            :active="request()->routeIs('admin.settings.*')"
+                            class="flex items-center"
+                        >
+                            <i data-lucide="settings" class="w-4 h-4 mr-1.5"></i>
+                            {{ __('Settings') }}
                         </x-nav-link>
                     @endif
                 </div>
@@ -115,7 +148,7 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
 
-            {{-- News hanya admin & humas --}}
+            {{-- News --}}
             @if(in_array($user->role, ['admin', 'humas']))
                 <x-responsive-nav-link :href="route('tickets.index')" :active="request()->routeIs('tickets.*')" class="flex items-center">
                     <i data-lucide="newspaper" class="w-4 h-4 mr-2"></i>
@@ -123,11 +156,44 @@
                 </x-responsive-nav-link>
             @endif
 
-            {{-- Contact hanya admin & humas --}}
+            {{-- Contact --}}
             @if(in_array($user->role, ['admin', 'humas']))
                 <x-responsive-nav-link :href="route('contacts.index')" :active="request()->routeIs('contacts.*')" class="flex items-center">
                     <i data-lucide="contact-2" class="w-4 h-4 mr-2"></i>
                     {{ __('Contact') }}
+                </x-responsive-nav-link>
+            @endif
+
+            {{-- Escalation --}}
+            @if($user->role === 'admin')
+                <x-responsive-nav-link
+                    :href="route('escalations.index')"
+                    :active="request()->routeIs('escalations.index')"
+                    class="flex items-center"
+                >
+                    <i data-lucide="logs" class="w-4 h-4 mr-2"></i>
+                    {{ __('Escalations') }}
+                </x-responsive-nav-link>
+            @elseif($user->role === 'humas')
+                <x-responsive-nav-link
+                    :href="route('escalations.my')"
+                    :active="request()->routeIs('escalations.my')"
+                    class="flex items-center"
+                >
+                    <i data-lucide="logs" class="w-4 h-4 mr-2"></i>
+                    {{ __('My Escalations') }}
+                </x-responsive-nav-link>
+            @endif
+
+            {{-- Settings --}}
+            @if($user->role === 'admin')
+                <x-responsive-nav-link
+                    :href="route('admin.settings.index')"
+                    :active="request()->routeIs('admin.settings.*')"
+                    class="flex items-center"
+                >
+                    <i data-lucide="settings" class="w-4 h-4 mr-2"></i>
+                    {{ __('Settings') }}
                 </x-responsive-nav-link>
             @endif
         </div>

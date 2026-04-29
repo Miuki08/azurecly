@@ -10,15 +10,18 @@ class ContactController extends Controller
 {
     public function indexWeb(Request $request)
     {
-        $query = Contact::with('creator');
+        $siteId = Auth::user()->site_id;
+
+        $query = Contact::with('creator')
+            ->where('site_id', $siteId);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('Name', 'LIKE', "%{$search}%")
-                  ->orWhere('Email', 'LIKE', "%{$search}%")
-                  ->orWhere('Phone', 'LIKE', "%{$search}%")
-                  ->orWhere('Institution', 'LIKE', "%{$search}%");
+                ->orWhere('Email', 'LIKE', "%{$search}%")
+                ->orWhere('Phone', 'LIKE', "%{$search}%")
+                ->orWhere('Institution', 'LIKE', "%{$search}%");
             });
         }
 
@@ -32,11 +35,11 @@ class ContactController extends Controller
 
         $contacts = $query->orderBy('Name')->paginate(15);
 
-        // daftar kategori statis dulu (bisa nanti dibuat tabel sendiri)
         $categories = ['humas', 'media', 'pimpinan', 'lainnya'];
 
         return view('contacts.index', compact('contacts', 'categories'));
     }
+
 
     public function createWeb()
     {
@@ -59,6 +62,7 @@ class ContactController extends Controller
         ]);
 
         Contact::create([
+            'site_id'     => Auth::user()->site_id,
             'Name'        => $validated['name'],
             'Email'       => $validated['email'] ?? null,
             'Phone'       => $validated['phone'] ?? null,
@@ -75,6 +79,9 @@ class ContactController extends Controller
 
     public function editWeb(Contact $contact)
     {
+        if ($contact->site_id !== Auth::user()->site_id) {
+            abort(404); 
+        }
         $categories = ['humas', 'media', 'pimpinan', 'lainnya'];
 
         return view('contacts.edit', compact('contact', 'categories'));
@@ -82,6 +89,10 @@ class ContactController extends Controller
 
     public function updateWeb(Request $request, Contact $contact)
     {
+        if ($contact->site_id !== Auth::user()->site_id) {
+            return redirect()->route('contacts.index')->with('error', 'Unauthorized to update this contact');
+        }
+
         if ($contact->Created != Auth::id() && Auth::user()->role !== 'admin') {
             return redirect()->route('contacts.index')->with('error', 'Unauthorized to update this contact');
         }
@@ -113,6 +124,10 @@ class ContactController extends Controller
 
     public function destroyWeb(Contact $contact)
     {
+        if ($contact->site_id !== Auth::user()->site_id) {
+            return redirect()->route('contacts.index')->with('error', 'Unauthorized to delete this contact');
+        }
+
         if ($contact->Created != Auth::id() && Auth::user()->role !== 'admin') {
             return redirect()->route('contacts.index')->with('error', 'Unauthorized to delete this contact');
         }
@@ -121,4 +136,5 @@ class ContactController extends Controller
 
         return redirect()->route('contacts.index')->with('success', 'Kontak berhasil dihapus.');
     }
+
 }
