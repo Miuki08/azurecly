@@ -17,7 +17,7 @@
                 @csrf
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    {{-- KIRI: Informasi Utama (lebih lebar) --}}
+                    {{-- Informasi Utama --}}
                     <div class="lg:col-span-2 space-y-5">
                         <div class="bg-white rounded-lg shadow border border-gray-100">
                             <div class="px-5 py-4 border-b border-gray-100 flex items-center">
@@ -359,6 +359,7 @@
                     files: [],
                     dragging: false,
                     maxFiles: 5,
+                    maxSize: 2 * 1024 * 1024, // 2 MB per file
 
                     handleInput(e) {
                         const selected = Array.from(e.target.files);
@@ -374,9 +375,28 @@
                     addFiles(newFiles) {
                         const imageFiles = newFiles.filter(file => file.type.startsWith('image/'));
 
+                        const oversized = imageFiles.filter(file => file.size > this.maxSize);
+                        if (oversized.length > 0) {
+                            const names = oversized.map(f => f.name).join(', ');
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'File terlalu besar',
+                                html: `File berikut melebihi 2 MB:<br><b>${names}</b><br><br>` +
+                                    `Setiap file gambar maksimal 2 MB.`,
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#2563eb',
+                                showClass: { popup: 'swal2-show-custom' },
+                                hideClass: { popup: 'swal2-hide-custom' },
+                                backdrop: 'rgba(15,23,42,0.35)',
+                            });
+                        }
+
+                        const validFiles = imageFiles.filter(file => file.size <= this.maxSize);
+
                         let combined = [
                             ...this.files,
-                            ...imageFiles.map(file => ({
+                            ...validFiles.map(file => ({
                                 file,
                                 url: URL.createObjectURL(file),
                             }))
@@ -384,6 +404,17 @@
 
                         if (combined.length > this.maxFiles) {
                             combined = combined.slice(0, this.maxFiles);
+
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Maksimal 5 gambar',
+                                text: 'Hanya 5 gambar pertama yang digunakan.',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#2563eb',
+                                showClass: { popup: 'swal2-show-custom' },
+                                hideClass: { popup: 'swal2-hide-custom' },
+                                backdrop: 'rgba(15,23,42,0.35)',
+                            });
                         }
 
                         this.files = combined;
@@ -411,4 +442,67 @@
             }
         </script>
     @endpush
+
+    @push('styles')
+        <style>
+            /* Biar popup tidak kegedean */
+            .swal2-popup {
+                width: 22rem !important;      /* sekitar 352px, lebih mungil */
+                padding: 1.25rem 1.5rem !important;
+                border-radius: 0.75rem !important;
+                font-size: 0.85rem !important;
+            }
+
+            .swal2-title {
+                font-size: 1rem !important;
+                font-weight: 600 !important;
+            }
+
+            .swal2-html-container {
+                font-size: 0.8rem !important;
+                margin-top: 0.5rem !important;
+            }
+
+            .swal2-icon {
+                transform: scale(0.8);
+                margin-top: 0.25rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .swal2-actions {
+                margin-top: 0.75rem !important;
+            }
+
+            .swal2-show-custom {
+                animation: swal2-zoom-in-up 0.25s ease-out forwards;
+            }
+
+            .swal2-hide-custom {
+                animation: swal2-zoom-out-down 0.2s ease-in forwards;
+            }
+
+            @keyframes swal2-zoom-in-up {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px) scale(0.85);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+
+            @keyframes swal2-zoom-out-down {
+                from {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateY(10px) scale(0.9);
+                }
+            }
+        </style>
+    @endpush
+
 </x-app-layout>

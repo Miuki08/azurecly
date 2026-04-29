@@ -78,6 +78,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
     Route::post('/admin/settings/users', [AdminSettingsController::class, 'storeUser'])
         ->name('admin.settings.users.store');
+    
+    Route::get('/escalations', [TicketEscalationController::class, 'indexWeb'])
+        ->name('escalations.index');
 });
 
 Route::middleware(['auth', 'role:humas,admin'])->group(function () {
@@ -89,6 +92,8 @@ Route::middleware(['auth', 'role:humas,admin'])->group(function () {
     Route::put('/tickets/{id}', [TicketController::class, 'updateWeb'])->name('tickets.update');
     Route::delete('/tickets/{id}', [TicketController::class, 'destroyWeb'])->name('tickets.destroy');
     Route::post('/tickets/{ticket}/escalate', [TicketEscalationController::class, 'store'])->name('tickets.escalate');
+    Route::get('/my-escalations', [TicketEscalationController::class, 'myIndexWeb'])
+        ->name('escalations.my');
 });
 
 Route::middleware('auth')->group(function () {

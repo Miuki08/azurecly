@@ -12,7 +12,98 @@ use Illuminate\Support\Facades\Mail;
 
 class TicketEscalationController extends Controller
 {
-    
+
+    /**
+     * Admin idex
+    */
+
+    public function indexWeb(Request $request)
+    {
+        $user   = Auth::user();
+        $siteId = $user->site_id;
+
+        $query = EscalationLog::with(['ticket', 'contact', 'escalator'])
+            ->where('site_id', $siteId)
+            ->latest('SentDate')
+            ->latest('created_at');
+
+        if ($request->filled('channel')) {
+            $query->where('Channel', $request->channel);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('Status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('Recipient', 'like', "%{$search}%")
+                  ->orWhere('Channel', 'like', "%{$search}%")
+                  ->orWhere('Status', 'like', "%{$search}%")
+                  ->orWhereHas('ticket', function ($qq) use ($search) {
+                      $qq->where('Title', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('contact', function ($qq) use ($search) {
+                      $qq->where('Name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $logs = $query->paginate(15);
+
+        return view('escalations.index', [
+            'logs' => $logs,
+            'mode' => 'admin', 
+        ]);
+    }
+
+    /**
+     * Humas index
+     */
+
+    public function myIndexWeb(Request $request)
+    {
+        $user   = Auth::user();
+        $siteId = $user->site_id;
+
+        $query = EscalationLog::with(['ticket', 'contact', 'escalator'])
+            ->where('site_id', $siteId)
+            ->where('Escalated', $user->id) 
+            ->latest('SentDate')
+            ->latest('created_at');
+
+        if ($request->filled('channel')) {
+            $query->where('Channel', $request->channel);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('Status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('Recipient', 'like', "%{$search}%")
+                  ->orWhere('Channel', 'like', "%{$search}%")
+                  ->orWhere('Status', 'like', "%{$search}%")
+                  ->orWhereHas('ticket', function ($qq) use ($search) {
+                      $qq->where('Title', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('contact', function ($qq) use ($search) {
+                      $qq->where('Name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $logs = $query->paginate(15);
+
+        return view('escalations.index', [
+            'logs' => $logs,
+            'mode' => 'humas',
+        ]);
+    }
+   
     public function store(Request $request, Ticket $ticket)
     {
         $user   = Auth::user();

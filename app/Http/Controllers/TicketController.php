@@ -167,6 +167,7 @@ class TicketController extends Controller
     public function storeWeb(Request $request)
     {
         $siteId = Auth::user()->site_id;
+        // dd(Auth::user()->site_id);
 
         $validated = $request->validate([
             'title'        => 'required|string|max:255',
@@ -182,7 +183,7 @@ class TicketController extends Controller
             'longitude'    => 'nullable|numeric',
             'published_at' => 'nullable|date',
             'images'       => 'nullable|array|max:5',
-            'images.*'     => 'image|max:2048',
+            'images.*'     => 'mimes:jpg,jpeg,png,webp,gif|max:2048'
         ]);
 
         $category = Category::where('site_id', $siteId)
@@ -215,17 +216,28 @@ class TicketController extends Controller
         ]);
         
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $index => $file) {
-                $path = $file->store('tickets', 'public');
+    foreach ($request->file('images') as $index => $file) {
+        logger()->info('Processing ticket image', [
+            'index'      => $index,
+            'name'       => $file->getClientOriginalName(),
+            'mime'       => $file->getMimeType(),
+        ]);
 
-                $ticket->images()->create([
-                    'site_id'     => $siteId,
-                    'Path'          => $path,
-                    'Description' => $file->getClientOriginalName(),
-                    'Order'         => $index,
-                ]);
-            }
-        }
+        $path = $file->store('tickets', 'public');
+
+        logger()->info('Stored ticket image', [
+            'index' => $index,
+            'path'  => $path,
+        ]);
+
+        $ticket->images()->create([
+            'site_id'     => $siteId,
+            'Path'        => $path,
+            'Description' => $file->getClientOriginalName(),
+            'Order'       => $index,
+        ]);
+    }
+}
 
         return redirect()
             ->route('tickets.index')
@@ -301,7 +313,8 @@ class TicketController extends Controller
             'latitude'     => 'nullable|numeric',
             'longitude'    => 'nullable|numeric',
             'published_at' => 'nullable|date',
-            'image'        => 'nullable|image|max:2048',
+            'image'        => 'nullable|array|max:5',
+            'images.*'     => 'mimes:jpg,jpeg,png,webp,gif|max:2048'
         ]);
 
         $updateData = [];
@@ -336,6 +349,26 @@ class TicketController extends Controller
         }
 
         $ticket->update($updateData);
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $index => $file) {
+                logger()->info('Processing ticket image (update)', [
+                    'ticket_id' => $ticket->id,
+                    'index'     => $index,
+                    'name'      => $file->getClientOriginalName(),
+                    'mime'      => $file->getMimeType(),
+                ]);
+
+                $path = $file->store('tickets', 'public');
+
+                $ticket->images()->create([
+                    'site_id'     => $siteId,
+                    'Path'        => $path,
+                    'Description' => $file->getClientOriginalName(),
+                    'Order'       => $ticket->images()->max('Order') + 1 + $index,
+                ]);
+            }
+        }
 
         return redirect()->route('tickets.index')->with('success', 'Berita berhasil diupdate');
     }

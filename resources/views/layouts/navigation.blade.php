@@ -28,7 +28,7 @@
 
                 <!-- Navigation Links (Desktop) -->
                 <div class="hidden space-x-6 sm:-my-px sm:ms-10 sm:flex sm:items-center">
-                    {{-- Dashboard) --}}
+                    {{-- Dashboard --}}
                     <x-nav-link :href="route('dashboard')" :active="$isDashboard" class="flex items-center">
                         <i data-lucide="layout-dashboard" class="w-4 h-4 mr-1.5"></i>
                         {{ __('Dashboard') }}
@@ -50,6 +50,28 @@
                         </x-nav-link>
                     @endif
 
+                    {{-- Escalation --}}
+                    @if($user->role === 'admin')
+                        <x-nav-link
+                            :href="route('escalations.index')"
+                            :active="request()->routeIs('escalations.index')"
+                            class="flex items-center"
+                        >
+                            <i data-lucide="logs" class="w-4 h-4 mr-1.5"></i>
+                            {{ __('Escalations') }}
+                        </x-nav-link>
+                    @elseif($user->role === 'humas')
+                        <x-nav-link
+                            :href="route('escalations.my')"
+                            :active="request()->routeIs('escalations.my')"
+                            class="flex items-center"
+                        >
+                            <i data-lucide="logs" class="w-4 h-4 mr-1.5"></i>
+                            {{ __('My Escalations') }}
+                        </x-nav-link>
+                    @endif
+                    
+                    {{-- Setting --}}
                     @if($user->role === 'admin')
                         <x-nav-link
                             :href="route('admin.settings.index')"
@@ -139,6 +161,27 @@
                 <x-responsive-nav-link :href="route('contacts.index')" :active="request()->routeIs('contacts.*')" class="flex items-center">
                     <i data-lucide="contact-2" class="w-4 h-4 mr-2"></i>
                     {{ __('Contact') }}
+                </x-responsive-nav-link>
+            @endif
+
+            {{-- Escalation --}}
+            @if($user->role === 'admin')
+                <x-responsive-nav-link
+                    :href="route('escalations.index')"
+                    :active="request()->routeIs('escalations.index')"
+                    class="flex items-center"
+                >
+                    <i data-lucide="logs" class="w-4 h-4 mr-2"></i>
+                    {{ __('Escalations') }}
+                </x-responsive-nav-link>
+            @elseif($user->role === 'humas')
+                <x-responsive-nav-link
+                    :href="route('escalations.my')"
+                    :active="request()->routeIs('escalations.my')"
+                    class="flex items-center"
+                >
+                    <i data-lucide="logs" class="w-4 h-4 mr-2"></i>
+                    {{ __('My Escalations') }}
                 </x-responsive-nav-link>
             @endif
 
