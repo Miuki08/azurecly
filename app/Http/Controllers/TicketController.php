@@ -21,7 +21,7 @@ class TicketController extends Controller
     {
         $siteId = Auth::user()->site_id;
 
-        $query = Ticket::with('creator')
+        $query = Ticket::with(['creator', 'images'])
         ->where('site_id', $siteId);
 
 
@@ -450,7 +450,7 @@ class TicketController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Ticket created successfully',
-                'data'    => new TicketResource($ticket->load('creator')),
+                'data'    => new TicketResource($ticket->load(['creator', 'images'])),
             ], 201);
 
         } catch (\Exception $e) {
@@ -562,7 +562,7 @@ class TicketController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Ticket updated successfully',
-                'data'    => new TicketResource($ticket->load('creator'))
+                'data'    => new TicketResource($ticket->load(['creator', 'images']))
             ]);
 
         } catch (\Exception $e) {

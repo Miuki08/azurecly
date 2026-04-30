@@ -30,6 +30,19 @@ class TicketResource extends JsonResource
                 'name' => $this->creator->name,
                 'email' => $this->creator->email
             ] : null,
+            'attachments' => $this->whenLoaded('images', function () {
+                return $this->images->map(function ($image) {
+                    return [
+                        'id'          => $image->id,
+                        'path'        => $image->Path,
+                        'description' => $image->Description,
+                        'order'       => $image->lsOrder,
+                        'url'         => $image->Path
+                            ? asset('storage/'.$image->Path)
+                            : null,
+                    ];
+                });
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
