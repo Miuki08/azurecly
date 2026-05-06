@@ -9,6 +9,7 @@ use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Http;
 
 class TicketEscalationController extends Controller
 {
@@ -103,19 +104,21 @@ class TicketEscalationController extends Controller
             'mode' => 'humas',
         ]);
     }
-   
+
+    /**
+    * entry of data and main logic in the escalation process
+    */
     public function store(Request $request, Ticket $ticket)
     {
         $user   = Auth::user();
         $siteId = $user->site_id;
 
-        // hardening: pastikan ticket milik site user
         if ($ticket->site_id !== $siteId) {
             abort(404);
         }
 
         $data = $request->validate([
-            'channel'    => 'required|in:email,whatsapp,both',
+            'channel'    => 'required|in:email,whatsapp,both,telegram',
             'contact_id' => 'nullable|exists:contacts,id',
             'recipient'  => 'nullable|string|max:255',
             'message'    => 'required|string',
@@ -133,6 +136,8 @@ class TicketEscalationController extends Controller
                     $recipient = $contact->Email;
                 } elseif ($data['channel'] === 'whatsapp') {
                     $recipient = $contact->Phone;
+                }elseif ($data['channel'] === 'telegram') {
+                    $recipient = $contact->TelegramChatId ?? $contact->TelegramUsername ?? null;
                 } else { 
                     $recipient = $contact->Email ?: $contact->Phone;
                 }
@@ -142,7 +147,7 @@ class TicketEscalationController extends Controller
         if (!$recipient) {
             return back()
                 ->withInput()
-                ->with('error', 'Penerima tidak boleh kosong, isi manual atau pilih kontak yang memiliki email / nomor.');
+                ->with('error', 'Penerima tidak boleh kosong, isi manual atau pilih kontak yang memiliki email atau nomor atau telegram.');
         }
 
         $log = EscalationLog::create([
@@ -195,9 +200,82 @@ class TicketEscalationController extends Controller
             return redirect()->away($waUrl);
         }
 
+        if (in_array($data['channel'], ['telegram', 'both'], true)) {
+            $result = $this->sendTelegramMessage($recipient, $data['message'], $ticket);
+            
+            if ($result['success']) {
+                $log->update([
+                    'Status'   => 'sent',
+                    'SentDate' => now(),
+                    'Response' => trim(($log->Response ?? '') . "\nTelegram Response: " . json_encode($result['response'])),
+                ]);
+                
+                return redirect()
+                    ->route('tickets.show', $ticket->id)
+                    ->with('success', 'Eskalasi Telegram berhasil dikirim.');
+            } else {
+                $log->update([
+                    'Status'   => 'failed',
+                    'Response' => $result['error'],
+                ]);
+                
+                return redirect()
+                    ->route('tickets.show', $ticket->id)
+                    ->with('error', 'Eskalasi Telegram gagal dikirim: ' . $result['error']);
+            }
+        }
+
         return redirect()
             ->route('tickets.show', $ticket->id)
             ->with('success', 'Eskalasi berita berhasil dikirim.');
+    }
+
+    /**
+     * Send message via Telegram Bot
+     */
+    private function sendTelegramMessage($recipient, $message, $ticket)
+    {
+        // $token = env('TELEGRAM_BOT_TOKEN');
+        $token = config('services.telegram.bot_token');
+        
+        if (!$token) {
+            return [
+                'success' => false,
+                'error' => 'TELEGRAM_BOT_TOKEN tidak ditemukan!!'
+            ];
+        }
+
+        $chatId = $recipient;
+        
+        $text = $message . "\n\n" . '📎 Detail berita: ' . route('tickets.show', $ticket->id);
+        
+        try {
+            $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                'chat_id' => $chatId,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+            ]);
+            
+            $responseData = $response->json();
+            
+            if ($response->successful() && isset($responseData['ok']) && $responseData['ok'] === true) {
+                return [
+                    'success' => true,
+                    'response' => $responseData
+                ];
+            } else {
+                $errorMessage = $responseData['description'] ?? 'Unknown error from Telegram API';
+                return [
+                    'success' => false,
+                    'error' => $errorMessage
+                ];
+            }
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
     }
 
     private function normalizeIDPhone(string $raw): ?string
