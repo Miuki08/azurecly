@@ -10,6 +10,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminSettingsController;
+use App\Http\Controllers\TelegramWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -94,7 +95,11 @@ Route::middleware(['auth', 'role:humas,admin'])->group(function () {
     Route::post('/tickets/{ticket}/escalate', [TicketEscalationController::class, 'store'])->name('tickets.escalate');
     Route::get('/my-escalations', [TicketEscalationController::class, 'myIndexWeb'])
         ->name('escalations.my');
+    
 });
+
+    Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
+        ->name('telegram.webhook');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

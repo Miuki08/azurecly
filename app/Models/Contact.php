@@ -11,7 +11,8 @@ class Contact extends Model
 
     protected $fillable = [
         'site_id','Name', 'Email', 'Phone', 'Position', 
-        'Institution', 'Category', 'Favorite', 'Notes', 'Created'
+        'Institution', 'Category', 'Favorite', 'Notes', 'Created', 
+        'TelegramUsername', 'TelegramChatId'
     ];
 
     protected $casts = [

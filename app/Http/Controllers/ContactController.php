@@ -59,6 +59,9 @@ class ContactController extends Controller
             'category'    => 'required|string|max:50',
             'favorite'    => 'nullable|boolean',
             'notes'       => 'nullable|string',
+            'telegram_username' => 'nullable|string|max:100',
+            'telegram_chat_id'  => 'nullable|string|max:100',
+
         ]);
 
         Contact::create([
@@ -71,6 +74,8 @@ class ContactController extends Controller
             'Category'    => $validated['category'],
             'Favorite'    => $request->boolean('favorite'),
             'Notes'       => $validated['notes'] ?? null,
+            'TelegramUsername' => $validated['telegram_username'] ?? null,
+            'TelegramChatId'   => $validated['telegram_chat_id'] ?? null,
             'Created'     => Auth::id(),
         ]);
 
@@ -106,6 +111,9 @@ class ContactController extends Controller
             'category'    => 'required|string|max:50',
             'favorite'    => 'nullable|boolean',
             'notes'       => 'nullable|string',
+            'telegram_username' => 'nullable|string|max:100',
+            'telegram_chat_id'  => 'nullable|string|max:100',
+
         ]);
 
         $contact->update([
@@ -117,6 +125,8 @@ class ContactController extends Controller
             'Category'    => $validated['category'],
             'Favorite'    => $request->boolean('favorite'),
             'Notes'       => $validated['notes'] ?? null,
+            'TelegramUsername' => $validated['telegram_username'] ?? null,
+            'TelegramChatId'   => $validated['telegram_chat_id'] ?? null,
         ]);
 
         return redirect()->route('contacts.index')->with('success', 'Kontak berhasil diupdate.');

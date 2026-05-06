@@ -219,6 +219,15 @@
                                    class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
                         </div>
 
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">
+                                    Telegram Username
+                                    <span class="text-[10px] text-gray-400">@username (opsional)</span>
+                                </label>
+                                <input type="text" name="telegram_username" x-model="form.telegram_username"
+                                    class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                            </div>
+
                         <div>
                             <label class="block text-xs font-medium text-gray-700 mb-1">
                                 Position
