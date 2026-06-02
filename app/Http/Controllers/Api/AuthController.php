@@ -72,6 +72,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required',
+            'site_id' => 'required|integer',
             'g-recaptcha-response' => 'required'
         ]);
 
@@ -97,19 +98,23 @@ class AuthController extends Controller
         // }
 
         // Attempt login
-        $credentials = $request->only('email', 'password');
+        $credentials = [
+            'email'   => $request->email,
+            'password'=> $request->password,
+            'site_id' => $request->site_id,
+        ];
 
         try {
             if (!$token = JWTAuth::attempt($credentials)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid email or password'
+                    'message' => 'Invalid email, password, or site',
                 ], 401);
             }
         } catch (JWTException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Could not create token'
+                'message' => 'Could not create token',
             ], 500);
         }
 

@@ -13,12 +13,13 @@ class Ticket extends Model
     protected $fillable = [
         'site_id','Title', 'Description', 'Image', 'Sentiment', 'Actor', 'Category', 'CategoryId',
         'Priority', 'Tag', 'Region', 'RegionId', 'Location', 'Latitude', 'Longitude',
-        'ViewCount', 'PublishedDate', 'EscalatedDate', 'Created'
+        'ViewCount', 'PublishedDate', 'HandlerType', 'EscalatedDate', 'Created'
     ];
 
     protected $casts = [
         'PublishedDate' => 'datetime',
         'EscalatedDate' => 'datetime',
+        'HandlerType' => 'boolean'
     ];
 
     public function site()
