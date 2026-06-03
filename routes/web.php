@@ -95,7 +95,8 @@ Route::middleware(['auth', 'role:humas,admin'])->group(function () {
     Route::post('/tickets/{ticket}/escalate', [TicketEscalationController::class, 'store'])->name('tickets.escalate');
     Route::get('/my-escalations', [TicketEscalationController::class, 'myIndexWeb'])
         ->name('escalations.my');
-    
+    Route::post('/tickets/{ticket}/visibility', [TicketController::class, 'updateVisibility'])
+        ->name('tickets.visibility'); 
 });
 
     Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
