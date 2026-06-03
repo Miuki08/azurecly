@@ -135,7 +135,7 @@
                                     Priority
                                 </th>
                                 <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                                    Views
+                                    <!-- kosong dulu -->
                                 </th>
                                 <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
                                     Date
@@ -180,8 +180,22 @@
                                             {{ ucfirst($ticket->Priority) }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        {{ $ticket->ViewCount }}
+                                    <td class="px-6 py-4 text-center">
+                                        @if($ticket->HandlerType)
+                                            <span
+                                                class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                                title="Tampil di publik"
+                                            >
+                                                <i data-lucide="cloud-check" class="w-4 h-4"></i>
+                                            </span>
+                                        @else
+                                            <span
+                                                class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-50 text-gray-300 border border-dashed border-gray-200"
+                                                title="Hanya di dashboard internal"
+                                            >
+                                                <i data-lucide="cloud-off" class="w-4 h-4"></i>
+                                            </span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-600">
                                         {{ $ticket->PublishedDate ? $ticket->PublishedDate->format('d M Y') : '-' }}

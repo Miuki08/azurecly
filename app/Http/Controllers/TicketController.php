@@ -142,7 +142,7 @@ class TicketController extends Controller
 
         $ticket = Ticket::with(['creator', 'images'])
             ->where('site_id', $siteId)
-            ->where('HandlerType', 1)
+            // ->where('HandlerType', 0)
             ->findOrFail($id);
 
         $contacts = Contact::where('site_id', $siteId)
@@ -266,5 +266,32 @@ class TicketController extends Controller
         $ticket->delete();
 
         return redirect()->route('tickets.index')->with('success', 'Berita berhasil dihapus');
+    }
+
+    public function updateVisibility(Request $request, $id)
+    {
+        $siteId = Auth::user()->site_id;
+
+        $ticket = Ticket::where('site_id', $siteId)->findOrFail($id);
+
+        if ($ticket->Created != Auth::id() && Auth::user()->role !== 'admin') {
+            return redirect()
+                ->route('tickets.show', $ticket->id)
+                ->with('error', 'Unauthorized to change visibility for this ticket');
+        }
+
+        $validated = $request->validate([
+            'HandlerType' => 'required|in:0,1',
+        ]);
+
+        $ticket->update([
+            'HandlerType' => $validated['HandlerType'],
+        ]);
+
+        return redirect()
+            ->route('tickets.show', $ticket->id)
+            ->with('success', $validated['HandlerType']
+                ? 'Berita sekarang tampil di public.'
+                : 'Berita sekarang hanya tampil di dashboard internal.');
     }
 }

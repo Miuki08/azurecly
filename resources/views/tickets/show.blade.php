@@ -16,6 +16,81 @@
                 Detail Berita
             </h2>
             <div class="flex items-center gap-2">
+                {{-- Visibility dropdown --}}
+                <div x-data="{ openVisibility: false }" class="relative">
+                    <button
+                        type="button"
+                        @click="openVisibility = !openVisibility"
+                        class="inline-flex items-center px-3 py-2 border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 rounded-lg text-sm font-medium transition"
+                    >
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full
+                                {{ $ticket->HandlerType ? 'bg-emerald-500' : 'bg-gray-400' }}">
+                            </span>
+                            <span class="text-xs">
+                                {{ $ticket->HandlerType ? 'Eksternal' : 'Internal' }}
+                            </span>
+                        </span>
+                        <i
+                            data-lucide="chevron-down"
+                            class="w-4 h-4 ml-1 text-gray-400"
+                        ></i>
+                    </button>
+
+                    {{-- Dropdown content --}}
+                    <div
+                        x-cloak
+                        x-show="openVisibility"
+                        @click.away="openVisibility = false"
+                        x-transition
+                        class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-100 z-40"
+                    >
+                        <form action="{{ route('tickets.visibility', $ticket->id) }}" method="POST" class="py-2">
+                            @csrf
+
+                            <p class="px-3 pb-1 text-[11px] text-gray-400">
+                                Atur apakah berita ini tampil di publik.
+                            </p>
+
+                            <button
+                                type="submit"
+                                name="HandlerType"
+                                value="0"
+                                class="w-full flex items-center justify-between px-3 py-2.5 text-xs text-gray-700 hover:bg-gray-50"
+                            >
+                                <span class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                                    <span>Internal</span>
+                                </span>
+                                <input
+                                    type="radio"
+                                    class="text-sea-blue-600 border-gray-300"
+                                    @click.stop
+                                    {{ !$ticket->HandlerType ? 'checked' : '' }}
+                                >
+                            </button>
+
+                            <button
+                                type="submit"
+                                name="HandlerType"
+                                value="1"
+                                class="w-full flex items-center justify-between px-3 py-2.5 text-xs text-gray-700 hover:bg-gray-50"
+                            >
+                                <span class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    <span>Eksternal</span>
+                                </span>
+                                <input
+                                    type="radio"
+                                    class="text-sea-blue-600 border-gray-300"
+                                    @click.stop
+                                    {{ $ticket->HandlerType ? 'checked' : '' }}
+                                >
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
                 {{-- Delete --}}
                 <form action="{{ route('tickets.destroy', $ticket->id) }}" method="POST" class="inline"
                       onsubmit="return confirm('Yakin ingin menghapus berita ini?')">
