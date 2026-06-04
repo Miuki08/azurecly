@@ -19,14 +19,16 @@
                     <span class="hidden sm:inline">Filter</span>
                 </button>
 
-                <button
-                    type="button"
-                    @click="openCreate()"
-                    class="inline-flex items-center gap-1.5 bg-sea-blue-600 hover:bg-sea-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition duration-150"
-                >
-                    <i data-lucide="plus" class="w-4 h-4"></i>
-                    Add Contact
-                </button>
+                @if(auth()->user()->role === 'admin')
+                    <button
+                        type="button"
+                        @click="openCreate()"
+                        class="inline-flex items-center gap-1.5 bg-sea-blue-600 hover:bg-sea-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition duration-150"
+                    >
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        Add Contact
+                    </button>
+                @endif
             </div>
         </div>
     </x-slot>
@@ -85,13 +87,29 @@
                     <table class="min-w-full divide-y divide-gray-100">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Name</th>
-                                <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Email</th>
-                                <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Phone</th>
-                                <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Institution</th>
-                                <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Category</th>
-                                <th class="px-6 py-3 text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Fav</th>
-                                <th class="px-6 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+                                <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                                    Name
+                                </th>
+                                <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                                    Email
+                                </th>
+                                <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                                    Phone
+                                </th>
+                                <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                                    Institution
+                                </th>
+                                <th class="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                                    Category
+                                </th>
+                                <th class="px-6 py-3 text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                                    Fav
+                                </th>
+                                @if(auth()->user()->role === 'admin')
+                                    <th class="px-6 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                                        Actions {{-- only visible for admin --}}
+                                    </th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
@@ -120,23 +138,27 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-3 text-right space-x-1">
-                                        <button
-                                            type="button"
-                                            class="inline-flex items-center justify-center w-8 h-8 rounded-full text-sea-blue-700 hover:bg-sea-blue-50 transition-colors duration-150"
-                                            @click="openEdit({{ $contact->toJson() }})"
-                                        >
-                                            <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                        </button>
-
-                                        <form action="{{ route('contacts.destroy', $contact->id) }}" method="POST" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                    class="inline-flex items-center justify-center w-8 h-8 rounded-full text-red-600 hover:bg-red-50 transition-colors duration-150"
-                                                    onclick="return confirm('Yakin ingin menghapus kontak ini?')">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        @if(auth()->user()->role === 'admin')
+                                            <button
+                                                type="button"
+                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full text-sea-blue-700 hover:bg-sea-blue-50 transition-colors duration-150"
+                                                @click="openEdit({{ $contact->toJson() }})"
+                                            >
+                                                <i data-lucide="edit-3" class="w-4 h-4"></i>
                                             </button>
-                                        </form>
+
+                                            <form action="{{ route('contacts.destroy', $contact->id) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button
+                                                    type="submit"
+                                                    class="inline-flex items-center justify-center w-8 h-8 rounded-full text-red-600 hover:bg-red-50 transition-colors duration-150"
+                                                    onclick="return confirm('Yakin ingin menghapus kontak ini?')"
+                                                >
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
@@ -166,130 +188,132 @@
         </div>
 
         {{-- Modal Add/Edit Contact --}}
-        <div
-            x-cloak
-            x-show="showModal"
-            class="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-            x-transition.opacity
-        >
+        @if(auth()->user()->role === 'admin')
             <div
-                class="bg-white rounded-xl shadow-xl border border-gray-100 w-full max-w-lg mx-4"
-                @click.away="closeModal()"
-                x-transition.scale
+                x-cloak
+                x-show="showModal"
+                class="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+                x-transition.opacity
             >
-                <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <h3 class="text-sm font-semibold text-gray-800" x-text="mode === 'create' ? 'Add Contact' : 'Edit Contact'"></h3>
-                    <button type="button" class="text-gray-400 hover:text-gray-600" @click="closeModal()">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
-
-                <form
-                    :action="mode === 'create' ? '{{ route('contacts.store') }}' : '{{ url('contacts') }}/' + form.id"
-                    method="POST"
-                    class="px-5 py-4 space-y-4"
+                <div
+                    class="bg-white rounded-xl shadow-xl border border-gray-100 w-full max-w-lg mx-4"
+                    @click.away="closeModal()"
+                    x-transition.scale
                 >
-                    @csrf
-                    <template x-if="mode === 'edit'">
-                        <input type="hidden" name="_method" value="PUT">
-                    </template>
+                    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-800" x-text="mode === 'create' ? 'Add Contact' : 'Edit Contact'"></h3>
+                        <button type="button" class="text-gray-400 hover:text-gray-600" @click="closeModal()">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">
-                                Name <span class="text-[10px] text-red-500">required</span>
-                            </label>
-                            <input type="text" name="name" x-model="form.name" required
-                                   class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
-                        </div>
+                    <form
+                        :action="mode === 'create' ? '{{ route('contacts.store') }}' : '{{ url('contacts') }}/' + form.id"
+                        method="POST"
+                        class="px-5 py-4 space-y-4"
+                    >
+                        @csrf
+                        <template x-if="mode === 'edit'">
+                            <input type="hidden" name="_method" value="PUT">
+                        </template>
 
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">
-                                Email
-                            </label>
-                            <input type="email" name="email" x-model="form.email"
-                                   class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">
-                                Phone
-                            </label>
-                            <input type="text" name="phone" x-model="form.phone"
-                                   class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
-                        </div>
-
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-medium text-gray-700 mb-1">
-                                    Telegram Username
-                                    <span class="text-[10px] text-gray-400">@username (opsional)</span>
+                                    Name <span class="text-[10px] text-red-500">required</span>
                                 </label>
-                                <input type="text" name="telegram_username" x-model="form.telegram_username"
+                                <input type="text" name="name" x-model="form.name" required
                                     class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
                             </div>
 
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">
-                                Position
-                            </label>
-                            <input type="text" name="position" x-model="form.position"
-                                   class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">
-                                Institution
-                            </label>
-                            <input type="text" name="institution" x-model="form.institution"
-                                   class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">
-                                Category
-                            </label>
-                            <select name="category" x-model="form.category"
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">
+                                    Email
+                                </label>
+                                <input type="email" name="email" x-model="form.email"
                                     class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
-                                @foreach($categories as $cat)
-                                    <option value="{{ $cat }}">{{ ucfirst($cat) }}</option>
-                                @endforeach
-                            </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">
+                                    Phone
+                                </label>
+                                <input type="text" name="phone" x-model="form.phone"
+                                    class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                            </div>
+
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                                        Telegram Username
+                                        <span class="text-[10px] text-gray-400">@username (opsional)</span>
+                                    </label>
+                                    <input type="text" name="telegram_username" x-model="form.telegram_username"
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">
+                                    Position
+                                </label>
+                                <input type="text" name="position" x-model="form.position"
+                                    class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">
+                                    Institution
+                                </label>
+                                <input type="text" name="institution" x-model="form.institution"
+                                    class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">
+                                    Category
+                                </label>
+                                <select name="category" x-model="form.category"
+                                        class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm">
+                                    @foreach($categories as $cat)
+                                        <option value="{{ $cat }}">{{ ucfirst($cat) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="flex items-center gap-2">
-                        <input id="favorite" name="favorite" type="checkbox" value="1"
-                               class="h-4 w-4 text-sea-blue-600 border-gray-300 rounded"
-                               x-model="form.favorite">
-                        <label for="favorite" class="text-xs text-gray-700">
-                            Tandai sebagai favorite
-                        </label>
-                    </div>
+                        <div class="flex items-center gap-2">
+                            <input id="favorite" name="favorite" type="checkbox" value="1"
+                                class="h-4 w-4 text-sea-blue-600 border-gray-300 rounded"
+                                x-model="form.favorite">
+                            <label for="favorite" class="text-xs text-gray-700">
+                                Tandai sebagai favorite
+                            </label>
+                        </div>
 
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">
-                            Notes
-                        </label>
-                        <textarea name="notes" rows="3"
-                                  class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
-                                  x-model="form.notes"></textarea>
-                    </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">
+                                Notes
+                            </label>
+                            <textarea name="notes" rows="3"
+                                    class="w-full rounded-lg border-gray-300 focus:border-sea-blue-500 focus:ring-sea-blue-500 text-sm"
+                                    x-model="form.notes"></textarea>
+                        </div>
 
-                    <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
-                        <button type="button"
-                                class="px-4 py-2 border border-gray-300 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition"
-                                @click="closeModal()">
-                            Batal
-                        </button>
-                        <button type="submit"
-                                class="px-4 py-2 bg-sea-blue-600 hover:bg-sea-blue-700 text-white rounded-lg text-xs font-medium inline-flex items-center gap-1 transition">
-                            <i data-lucide="save" class="w-4 h-4"></i>
-                            <span x-text="mode === 'create' ? 'Simpan Kontak' : 'Update Kontak'"></span>
-                        </button>
-                    </div>
-                </form>
+                        <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                            <button type="button"
+                                    class="px-4 py-2 border border-gray-300 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition"
+                                    @click="closeModal()">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 bg-sea-blue-600 hover:bg-sea-blue-700 text-white rounded-lg text-xs font-medium inline-flex items-center gap-1 transition">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span x-text="mode === 'create' ? 'Simpan Kontak' : 'Update Kontak'"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
+        @endif
 
     @push('scripts')
         <script src="https://unpkg.com/lucide@latest"></script>
