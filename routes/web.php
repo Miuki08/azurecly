@@ -11,6 +11,7 @@ use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\TelegramWebhookController;
+use App\Http\Controllers\ProfileFaceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -81,7 +82,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
         ->name('admin.settings.users.store');
     
     Route::get('/escalations', [TicketEscalationController::class, 'indexWeb'])
-        ->name('escalations.index');
+        ->name('escalations.index');    
+    Route::post('/escalations/{escalation}/verify-face', [TicketEscalationController::class, 'verifyFace'])
+        ->name('escalations.verify-face');
 });
 
 Route::middleware(['auth', 'role:humas,admin'])->group(function () {
@@ -106,6 +109,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile/face-enroll-local', [ProfileFaceController::class, 'store'])
+        ->name('profile.face-enroll-local');
 });
 
 Route::middleware(['auth'])->group(function () {

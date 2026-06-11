@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class TicketEscalationController extends Controller
 {
@@ -102,6 +103,62 @@ class TicketEscalationController extends Controller
         return view('escalations.index', [
             'logs' => $logs,
             'mode' => 'humas',
+        ]);
+    }
+
+    /**
+     * Verify face and delete escalation log
+     */
+
+    public function verifyFace(Request $request, EscalationLog $escalation)
+    {
+        $data = $request->validate([
+            'descriptor'   => 'required|array',
+            'descriptor.*' => 'numeric',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user->FaceDescription || !is_array($user->FaceDescription)) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Face is not registered for this admin account.',
+            ], 422);
+        }
+
+        $stored = $user->FaceDescription;
+        $probe  = $data['descriptor'];
+
+        if (count($stored) !== count($probe)) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Descriptor length mismatch.',
+            ], 422);
+        }
+
+        $sum = 0.0;
+        $n   = count($stored);
+        for ($i = 0; $i < $n; $i++) {
+            $d   = $stored[$i] - $probe[$i];
+            $sum += $d * $d;
+        }
+        $distance  = sqrt($sum);
+        $threshold = 0.6; 
+
+        if ($distance > $threshold) {
+            return response()->json([
+                'ok'       => false,
+                'message'  => 'Face verification failed.',
+                'distance' => $distance,
+            ], 403);
+        }
+
+        $escalation->delete();
+
+        return response()->json([
+            'ok'       => true,
+            'message'  => 'Face verified & escalation deleted.',
+            'distance' => $distance,
         ]);
     }
 
