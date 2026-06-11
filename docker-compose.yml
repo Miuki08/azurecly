@@ -1,0 +1,42 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    ports:
+      - "8000:80"
+
+    volumes:
+      - .:/var/www/html
+
+    depends_on:
+      - db
+
+    networks:
+      - azurecly-network
+
+  db:
+    image: mysql:8.0
+
+    ports:
+    - "3307:3306"
+
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+
+    volumes:
+      - azurecly-db:/var/lib/mysql
+
+    networks:
+      - azurecly-network
+
+volumes:
+  azurecly-db:
+
+networks:
+  azurecly-network:
+    driver: bridge
