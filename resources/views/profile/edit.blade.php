@@ -1,243 +1,510 @@
 <x-app-layout>
+    {{-- Header Section with Gradient --}}
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-sea-blue-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-gradient-to-br from-sea-blue-500 to-sea-blue-600 rounded-xl shadow-lg">
+                <i data-lucide="user-circle-2" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+                <h2 class="font-bold text-xl text-gray-900 leading-tight">
+                    {{ __('Profile') }}
+                </h2>
+                <p class="text-xs text-gray-500 mt-0.5">
+                    Manage your account settings and preferences
+                </p>
+            </div>
+        </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-            <div class="bg-white border border-gray-100 rounded-xl shadow-sm">
-                <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 bg-sea-blue-100 rounded-lg">
-                            <i data-lucide="user-circle-2" class="w-5 h-5 text-sea-blue-600"></i>
+    <div class="py-8">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {{-- Profile Overview --}}
+                <div class="md:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                    {{-- Card Header --}}
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-sea-blue-100 rounded-lg">
+                                    <i data-lucide="user" class="w-5 h-5 text-sea-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-semibold text-gray-900">
+                                        {{ __('Profile Information') }}
+                                    </h3>
+                                    <p class="text-xs text-gray-500">
+                                        Update your account's profile information
+                                    </p>
+                                </div>
+                            </div>
+                            @if($user->last_profile_update_at)
+                                <span class="text-[10px] text-gray-400">
+                                    Updated {{ $user->last_profile_update_at->diffForHumans() }}
+                                </span>
+                            @endif
                         </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-900">
-                                {{ __('Account & Security') }}
-                            </h3>
-                            <p class="text-xs text-gray-500">
-                                Kelola informasi profil, password, dan penghapusan akun dengan lapisan keamanan tambahan berbasis wajah.
-                            </p>
+                    </div>
+
+                    {{-- Card Content --}}
+                    <div class="px-6 py-6">
+                        <div class="flex items-start gap-6">
+                            {{-- Avatar Section --}}
+                            <div class="flex-shrink-0">
+                                <div class="relative group">
+                                    {{-- Avatar Display --}}
+                                    @if($user->avatar_path)
+                                        <img id="avatar-preview" 
+                                            src="{{ asset('storage/' . $user->avatar_path) }}" 
+                                            alt="Avatar"
+                                            class="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white">
+                                    @else
+                                        <div id="avatar-placeholder" 
+                                            class="w-24 h-24 rounded-full bg-gradient-to-br from-sea-blue-400 to-sea-blue-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+                                    
+                                    {{-- Upload Button --}}
+                                    <button type="button" 
+                                            onclick="document.getElementById('avatar-upload').click()"
+                                            class="absolute bottom-0 right-0 p-2 bg-sea-blue-600 rounded-full shadow-lg hover:bg-sea-blue-700 transition transform group-hover:scale-110">
+                                        <i data-lucide="camera" class="w-4 h-4 text-white"></i>
+                                    </button>
+                                    
+                                    {{-- Hidden Form for Avatar Upload --}}
+                                    <form id="avatar-form" method="POST" action="{{ route('profile.update-avatar') }}" enctype="multipart/form-data" class="hidden">
+                                        @csrf
+                                        @method('POST')
+                                        <input type="file" 
+                                            id="avatar-upload" 
+                                            name="avatar" 
+                                            accept="image/*" 
+                                            class="hidden"
+                                            onchange="previewAndUploadAvatar(this)">
+                                    </form>
+
+                                    {{-- Loading Overlay --}}
+                                    <div id="avatar-loading" 
+                                        class="absolute inset-0 w-24 h-24 rounded-full bg-black/50 flex items-center justify-center hidden">
+                                        <i data-lucide="loader-2" class="w-8 h-8 text-white animate-spin"></i>
+                                    </div>
+                                </div>
+
+                                {{-- Face Status Badge --}}
+                                <div class="mt-3 flex justify-center">
+                                    @if($hasFace)
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-medium text-emerald-700">
+                                            <i data-lucide="shield-check" class="w-3 h-3"></i>
+                                            Verified
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-medium text-amber-700">
+                                            <i data-lucide="alert-circle" class="w-3 h-3"></i>
+                                            Not Verified
+                                        </span>
+                                    @endif
+                                </div>
+
+                                {{-- Success Message --}}
+                                <div id="avatar-success" 
+                                    class="mt-2 text-center text-xs text-emerald-600 font-medium hidden">
+                                    <i data-lucide="check-circle" class="w-3.5 h-3.5 inline mr-1"></i>
+                                    Avatar updated!
+                                </div>
+                            </div>
+
+                            {{-- Profile Form --}}
+                            <div class="flex-1 space-y-4">
+                                <form id="profile-form" method="POST" action="{{ route('profile.update') }}" class="space-y-4">
+                                    @csrf
+                                    @method('patch')
+
+                                    {{-- Name --}}
+                                    <div>
+                                        <label for="name" class="block text-xs font-medium text-gray-700 mb-1">
+                                            Name
+                                        </label>
+                                        <input type="text" 
+                                               name="name" 
+                                               id="name" 
+                                               value="{{ $user->name }}"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sea-blue-500 focus:border-transparent @error('name') border-red-500 @enderror">
+                                        @error('name')
+                                            <p class="mt-1 text-[10px] text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    {{-- Email --}}
+                                    <div>
+                                        <label for="email" class="block text-xs font-medium text-gray-700 mb-1">
+                                            Email
+                                        </label>
+                                        <input type="email" 
+                                               name="email" 
+                                               id="email" 
+                                               value="{{ $user->email }}"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sea-blue-500 focus:border-transparent @error('email') border-red-500 @enderror">
+                                        @error('email')
+                                            <p class="mt-1 text-[10px] text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    {{-- Organization (Read-only) --}}
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">
+                                            Organization
+                                        </label>
+                                        <div class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
+                                            {{ $user->site?->Name ?? '-' }}
+                                        </div>
+                                    </div>
+
+                                    {{-- Submit Button --}}
+                                    <div class="flex items-center gap-3 pt-2">
+                                        <button type="button" 
+                                                id="profile-save-trigger"
+                                                class="px-4 py-2 bg-sea-blue-600 text-white text-sm font-medium rounded-lg hover:bg-sea-blue-700 transition focus:outline-none focus:ring-2 focus:ring-sea-blue-500 focus:ring-offset-2">
+                                            Save Changes
+                                        </button>
+                                        
+                                        @if (session('status') === 'profile-updated')
+                                            <span class="text-xs text-emerald-600 font-medium">Saved!</span>
+                                        @endif
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="px-6 py-5 space-y-8">
-                    @if(!$hasFace)
-                        {{-- Read-only summary when no face is registered --}}
-                        <section class="space-y-4 text-sm">
-                            <header>
-                                <h2 class="text-sm font-semibold text-gray-900">
-                                    {{ __('Profile Information') }}
-                                </h2>
-                                <p class="mt-1 text-xs text-gray-600">
-                                    Profil terkunci hingga kamu mendaftarkan wajahmu untuk verifikasi tambahan.
-                                </p>
-                            </header>
+                {{-- Card 2: Activity Stats (Small Card - 1 column) --}}
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                    {{-- Card Header --}}
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                        <div class="flex items-center gap-2">
+                            <div class="p-2 bg-indigo-100 rounded-lg">
+                                <i data-lucide="activity" class="w-5 h-5 text-indigo-600"></i>
+                            </div>
+                            <h3 class="text-sm font-semibold text-gray-900">
+                                Activity
+                            </h3>
+                        </div>
+                    </div>
 
-                            <div class="space-y-3">
-                                <div>
-                                    <div class="text-xs font-semibold text-gray-500">Name</div>
-                                    <div class="mt-0.5 text-gray-800">{{ $user->name }}</div>
+                    {{-- Card Content --}}
+                    <div class="px-6 py-5 space-y-4">
+                        {{-- Last Login --}}
+                        <div class="space-y-1.5">
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+                                <span>Last Login</span>
+                            </div>
+                            @if($user->last_login_at)
+                                <div class="px-3 py-2 bg-gray-50 rounded-lg">
+                                    <p class="text-sm font-medium text-gray-900">
+                                        {{ $user->last_login_at->format('d M Y, H:i') }}
+                                    </p>
+                                    <p class="text-[10px] text-gray-500">
+                                        {{ $user->last_login_at->diffForHumans() }}
+                                    </p>
+                                    @if($user->last_login_ip)
+                                        <p class="text-[10px] text-gray-400 mt-1">
+                                            IP: {{ $user->last_login_ip }}
+                                        </p>
+                                    @endif
+                                </div>
+                            @else
+                                <p class="text-xs text-gray-400 italic">No data</p>
+                            @endif
+                        </div>
+
+                        {{-- Account Age --}}
+                        <div class="space-y-1.5">
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                                <span>Member Since</span>
+                            </div>
+                            <div class="px-3 py-2 bg-gray-50 rounded-lg">
+                                <p class="text-sm font-medium text-gray-900">
+                                    {{ $user->created_at->format('d M Y') }}
+                                </p>
+                                <p class="text-[10px] text-gray-500">
+                                    {{ $user->created_at->diffForHumans() }}
+                                </p>
+                            </div>
+                        </div>
+
+                        {{-- Role Badge --}}
+                        <div class="space-y-1.5">
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                <i data-lucide="badge" class="w-3.5 h-3.5"></i>
+                                <span>Role</span>
+                            </div>
+                            <div class="px-3 py-2 bg-gray-50 rounded-lg">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium
+                                    @if($user->Admin())
+                                        bg-red-100 text-red-800
+                                    @elseif($user->Humas())
+                                        bg-blue-100 text-blue-800
+                                    @elseif($user->Media())
+                                        bg-green-100 text-green-800
+                                    @endif">
+                                    {{ ucfirst($user->role) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Card 3: Face Verification (Full Width) --}}
+                <div class="md:col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                    {{-- Card Header --}}
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-purple-100 rounded-lg">
+                                    <i data-lucide="scan-face" class="w-5 h-5 text-purple-600"></i>
                                 </div>
                                 <div>
-                                    <div class="text-xs font-semibold text-gray-500">Email</div>
-                                    <div class="mt-0.5 text-gray-800">{{ $user->email }}</div>
+                                    <h3 class="text-sm font-semibold text-gray-900">
+                                        Face Verification
+                                    </h3>
+                                    <p class="text-xs text-gray-500">
+                                        Secure your account with facial recognition
+                                    </p>
                                 </div>
-                                <div>
-                                    <div class="text-xs font-semibold text-gray-500">Organization</div>
-                                    <div class="mt-0.5 text-gray-800">
-                                        {{ $user->site?->Name ?? '-' }}
+                            </div>
+                            @if($hasFace)
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700">
+                                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                                    <span>Face Registered</span>
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-xs font-medium text-amber-700">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                                    <span>Not Registered</span>
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Card Content --}}
+                    <div class="px-6 py-6">
+                        @if(!$hasFace)
+                            {{-- Warning Box --}}
+                            <div class="mb-6 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+                                <div class="flex items-start gap-3">
+                                    <i data-lucide="info" class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-amber-800">
+                                            Face Verification Required
+                                        </p>
+                                        <p class="text-xs text-amber-700 mt-1">
+                                            Register your face to enable profile editing, password changes, and account deletion. This adds an extra layer of security to your account.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
+                        @endif
 
-                            <div class="mt-3 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 text-[11px] text-amber-800">
-                                Untuk mengubah nama, email, password, atau menghapus akun, daftarkan wajahmu terlebih dahulu di bagian <span class="font-semibold">Face Verification</span> di bawah.
-                            </div>
-                        </section>
-                    @else
-                        <section id="profile-info-section">
-                            @include('profile.partials.update-profile-information-form')
-                        </section>
-
-                        <section id="profile-password-section" class="pt-4 border-t border-gray-100">
-                            @include('profile.partials.update-password-form')
-                        </section>
-
-                        <section id="profile-delete-section" class="pt-4 border-t border-gray-100">
-                            @include('profile.partials.delete-user-form')
-                        </section>
-                    @endif
-                </div>
-            </div>
-
-            <div class="bg-white border border-gray-100 rounded-xl shadow-sm">
-                <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 bg-sea-blue-100 rounded-lg">
-                            <i data-lucide="scan-face" class="w-5 h-5 text-sea-blue-600"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-900">
-                                Face Verification
-                            </h3>
-                            <p class="text-xs text-gray-500">
-                                Daftarkan atau perbarui deskriptor wajah yang digunakan untuk mengamankan perubahan profil dan penghapusan akun.
-                            </p>
-                        </div>
-                    </div>
-
-                    @if($user->FaceDescription)
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[11px] text-emerald-700">
-                            <i data-lucide="shield-check" class="w-3 h-3"></i>
-                            <span>Face registered</span>
-                        </span>
-                    @else
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-100 text-[11px] text-amber-700">
-                            <i data-lucide="alert-triangle" class="w-3 h-3"></i>
-                            <span>Not registered</span>
-                        </span>
-                    @endif
-                </div>
-
-                <div class="px-6 py-5 space-y-4">
-                    <p class="text-xs text-gray-500">
-                        Wajah diproses secara lokal di browser menggunakan face-api.js. Azurecly hanya menyimpan deskriptor numerik (bukan foto mentah) di akunmu. [web:172]
-                    </p>
-
-                    <div class="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex flex-col md:flex-row">
-                        <div class="md:w-1/2 p-3 flex flex-col">
-                            <div class="text-xs font-medium text-gray-700 mb-2 flex items-center justify-between">
-                                <span>Camera Preview</span>
-                                <span id="face-status-badge"
-                                      class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gray-100 text-[11px] text-gray-600">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                                    <span>Idle</span>
-                                </span>
-                            </div>
-                            <div class="relative rounded-md overflow-hidden bg-black aspect-video">
-                                <video id="face-video" autoplay muted playsinline class="w-full h-full object-cover"></video>
-                                <canvas id="face-overlay" class="absolute inset-0 w-full h-full"></canvas>
-                            </div>
-                            <p class="mt-2 text-[11px] text-gray-500">
-                                Pastikan wajah terlihat jelas, tidak terlalu gelap, dan berada di tengah frame.
-                            </p>
-                        </div>
-
-                        <div class="md:w-1/2 p-3 flex flex-col justify-between">
-                            <div class="space-y-2">
-                                <p class="text-xs font-semibold text-gray-800">
-                                    Langkah pendaftaran wajah
-                                </p>
-                                <ol class="list-decimal list-inside text-[11px] text-gray-600 space-y-1">
-                                    <li>Aktifkan kamera dan izinkan akses browser.</li>
-                                    <li>Posisikan wajah di tengah dan tahan beberapa detik.</li>
-                                    <li>Klik "Capture &amp; Save" untuk menyimpan deskriptor wajah.</li>
-                                </ol>
-                            </div>
-
-                            <div class="mt-3 flex flex-wrap items-center gap-2">
-                                <button type="button"
-                                        id="face-start-camera"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 transition">
-                                    <i data-lucide="video" class="w-4 h-4"></i>
-                                    <span>{{ $user->FaceDescription ? 'Re-capture' : 'Start Camera' }}</span>
-                                </button>
-
-                                <button type="button"
-                                        id="face-capture-save"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sea-blue-600 text-white text-xs font-medium hover:bg-sea-blue-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                                        disabled>
-                                    <i data-lucide="save" class="w-4 h-4"></i>
-                                    <span>Capture &amp; Save</span>
-                                </button>
-
-                                <button type="button"
-                                        id="face-stop-camera"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-500 hover:bg-gray-50 transition">
-                                    <i data-lucide="square" class="w-3 h-3"></i>
-                                    <span>Stop</span>
-                                </button>
-                            </div>
-
-                            <p id="face-message" class="mt-2 text-[11px] text-gray-500"></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="profile-face-modal"
-                 class="fixed inset-0 bg-black/40 z-50 items-center justify-center hidden">
-                <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
-                    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div class="p-2 bg-sea-blue-100 rounded-lg">
-                                <i data-lucide="scan-face" class="w-5 h-5 text-sea-blue-600"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-semibold text-gray-900">
-                                    Verifikasi Wajah Diperlukan
-                                </h3>
-                                <p class="text-[11px] text-gray-500" id="profile-face-modal-purpose">
-                                    Kami perlu memverifikasi wajahmu sebelum melanjutkan.
-                                </p>
-                            </div>
-                        </div>
-                        <button type="button" id="profile-face-modal-close"
-                                class="w-7 h-7 inline-flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600">
-                            <i data-lucide="x" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-
-                    <div class="px-5 py-4 space-y-3">
-                        <div class="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                            <div class="p-3">
-                                <div class="flex items-center justify-between mb-1.5">
-                                    <span class="text-xs font-medium text-gray-700">
+                        {{-- Camera Preview & Controls --}}
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {{-- Left: Camera Preview --}}
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-xs font-semibold text-gray-700">
                                         Camera Preview
-                                    </span>
-                                    <span id="profile-face-status"
-                                          class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gray-100 text-[11px] text-gray-600">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                                    </label>
+                                    <span id="face-status-badge"
+                                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 text-[10px] font-medium text-gray-600">
+                                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>
                                         <span>Idle</span>
                                     </span>
                                 </div>
-                                <div class="relative rounded-md overflow-hidden bg-black aspect-video">
+                                
+                                <div class="relative rounded-xl overflow-hidden bg-black shadow-lg aspect-video">
+                                    <video id="face-video" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                                    <canvas id="face-overlay" class="absolute inset-0 w-full h-full"></canvas>
+                                    
+                                    {{-- Overlay when no camera --}}
+                                    <div id="camera-placeholder" 
+                                         class="absolute inset-0 flex items-center justify-center bg-gray-900/80">
+                                        <div class="text-center">
+                                            <i data-lucide="camera-off" class="w-12 h-12 text-gray-500 mx-auto mb-2"></i>
+                                            <p class="text-xs text-gray-400">Click "Start Camera" to begin</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p class="text-[10px] text-gray-500">
+                                    💡 <strong>Tip:</strong> Ensure good lighting and position your face in the center of the frame.
+                                </p>
+                            </div>
+
+                            {{-- Right: Instructions & Controls --}}
+                            <div class="space-y-4">
+                                {{-- Instructions --}}
+                                <div class="px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
+                                    <p class="text-xs font-semibold text-gray-800 mb-2">
+                                        How to register your face
+                                    </p>
+                                    <ol class="list-decimal list-inside text-[10px] text-gray-600 space-y-1.5">
+                                        <li>Click "Start Camera" and allow browser access</li>
+                                        <li>Position your face in the center of the frame</li>
+                                        <li>Wait for face detection (green outline)</li>
+                                        <li>Click "Capture & Save" to register</li>
+                                    </ol>
+                                </div>
+
+                                {{-- Action Buttons --}}
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button"
+                                            id="face-start-camera"
+                                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-sea-blue-500">
+                                        <i data-lucide="video" class="w-4 h-4"></i>
+                                        <span>{{ $hasFace ? 'Re-capture' : 'Start Camera' }}</span>
+                                    </button>
+
+                                    <button type="button"
+                                            id="face-capture-save"
+                                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-sea-blue-600 text-white text-xs font-medium hover:bg-sea-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-sea-blue-500 focus:ring-offset-2"
+                                            disabled>
+                                        <i data-lucide="save" class="w-4 h-4"></i>
+                                        <span>Capture & Save</span>
+                                    </button>
+
+                                    <button type="button"
+                                            id="face-stop-camera"
+                                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-500 hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-gray-300">
+                                        <i data-lucide="square" class="w-3.5 h-3.5"></i>
+                                        <span>Stop</span>
+                                    </button>
+                                </div>
+
+                                {{-- Message Area --}}
+                                <div id="face-message" class="min-h-[40px] px-3 py-2 rounded-lg bg-gray-50 border border-gray-200">
+                                    <p class="text-[10px] text-gray-500">
+                                        Ready to capture your face descriptor.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Card 4: Password & Security (Full Width) - Only if hasFace --}}
+                @if($hasFace)
+                    <div class="md:col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-red-100 rounded-lg">
+                                    <i data-lucide="lock" class="w-5 h-5 text-red-600"></i>
+                                </div>
+                                <h3 class="text-sm font-semibold text-gray-900">
+                                    Password & Security
+                                </h3>
+                            </div>
+                        </div>
+
+                        <div class="px-6 py-6 space-y-6">
+                            {{-- Update Password Form --}}
+                            <section id="profile-password-section">
+                                @include('profile.partials.update-password-form')
+                            </section>
+
+                            {{-- Delete Account Form --}}
+                            <section id="profile-delete-section" class="pt-6 border-t border-gray-100">
+                                @include('profile.partials.delete-user-form')
+                            </section>
+                        </div>
+                    </div>
+                @endif
+
+            </div> {{-- End Bento Grid --}}
+
+            {{-- Face Verification Modal --}}
+            <div id="profile-face-modal"
+                 class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center hidden">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden">
+                    {{-- Modal Header --}}
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-purple-100 rounded-lg">
+                                    <i data-lucide="scan-face" class="w-5 h-5 text-purple-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-semibold text-gray-900">
+                                        Face Verification Required
+                                    </h3>
+                                    <p class="text-[10px] text-gray-500" id="profile-face-modal-purpose">
+                                        Verify your identity to proceed
+                                    </p>
+                                </div>
+                            </div>
+                            <button type="button" 
+                                    id="profile-face-modal-close"
+                                    class="w-8 h-8 inline-flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Modal Content --}}
+                    <div class="px-6 py-5 space-y-4">
+                        {{-- Camera Preview --}}
+                        <div class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                            <div class="p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-semibold text-gray-700">
+                                        Camera Preview
+                                    </span>
+                                    <span id="profile-face-status"
+                                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 text-[10px] font-medium text-gray-600">
+                                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                                        <span>Idle</span>
+                                    </span>
+                                </div>
+                                <div class="relative rounded-lg overflow-hidden bg-black aspect-video">
                                     <video id="profile-face-video" autoplay muted playsinline class="w-full h-full object-cover"></video>
                                     <canvas id="profile-face-overlay" class="absolute inset-0 w-full h-full"></canvas>
                                 </div>
-                                <p class="mt-1.5 text-[11px] text-gray-500">
-                                    Posisikan wajah di tengah frame, pencahayaan cukup, lalu klik "Verify".
+                                <p class="mt-2 text-[10px] text-gray-500">
+                                    Position your face in the center, ensure good lighting, then click "Verify".
                                 </p>
                             </div>
                         </div>
 
-                        <p id="profile-face-message" class="text-[11px] text-gray-500"></p>
+                        {{-- Message Area --}}
+                        <div id="profile-face-message" class="min-h-[40px] px-3 py-2 rounded-lg bg-gray-50 border border-gray-200">
+                            <p class="text-[10px] text-gray-500">
+                                Click "Start Camera" to begin verification.
+                            </p>
+                        </div>
                     </div>
 
-                    <div class="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+                    {{-- Modal Footer --}}
+                    <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
                         <button type="button"
                                 id="profile-face-cancel"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">
-                            <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
-                            <span>Batal</span>
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-white transition focus:outline-none focus:ring-2 focus:ring-gray-300">
+                            <i data-lucide="x-circle" class="w-4 h-4"></i>
+                            <span>Cancel</span>
                         </button>
 
                         <div class="flex items-center gap-2">
                             <button type="button"
                                     id="profile-face-start"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 text-xs text-gray-700 hover:bg-gray-50">
-                                <i data-lucide="video" class="w-3.5 h-3.5"></i>
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-xs font-medium text-gray-700 hover:bg-white transition focus:outline-none focus:ring-2 focus:ring-sea-blue-500">
+                                <i data-lucide="video" class="w-4 h-4"></i>
                                 <span>Start Camera</span>
                             </button>
                             <button type="button"
                                     id="profile-face-verify"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sea-blue-600 text-white text-xs font-medium hover:bg-sea-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sea-blue-600 text-white text-xs font-medium hover:bg-sea-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition focus:outline-none focus:ring-2 focus:ring-sea-blue-500 focus:ring-offset-2"
                                     disabled>
-                                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                                <i data-lucide="shield-check" class="w-4 h-4"></i>
                                 <span>Verify</span>
                             </button>
                         </div>
@@ -608,6 +875,57 @@
                     pfStopCamera();
                 });
             });
+
+            function previewAndUploadAvatar(input) {
+                    if (input.files && input.files[0]) {
+                        const file = input.files[0];
+                        const reader = new FileReader();
+                        
+                        document.getElementById('avatar-loading').classList.remove('hidden');
+                        document.getElementById('avatar-success').classList.add('hidden');
+                        
+                        reader.onload = function(e) {
+                            const placeholder = document.getElementById('avatar-placeholder');
+                            const preview = document.getElementById('avatar-preview');
+                            
+                            if (placeholder) {
+                                placeholder.outerHTML = `<img id="avatar-preview" src="${e.target.result}" alt="Avatar" class="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white">`;
+                            } else if (preview) {
+                                preview.src = e.target.result;
+                            }
+
+                            const formData = new FormData();
+                            formData.append('avatar', file);
+                            formData.append('_token', '{{ csrf_token() }}');
+                            
+                            fetch("{{ route('profile.update-avatar') }}", {
+                                method: 'POST',
+                                body: formData
+                            })
+                            .then(response => {
+                                if (response.ok) {
+                                    document.getElementById('avatar-success').classList.remove('hidden');
+                                    setTimeout(() => {
+                                        document.getElementById('avatar-success').classList.add('hidden');
+                                    }, 3000);
+                                } else {
+                                    alert('Failed to upload avatar. Please try again.');
+                                    window.location.reload();
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('An error occurred while uploading.');
+                                window.location.reload();
+                            })
+                            .finally(() => {
+                                document.getElementById('avatar-loading').classList.add('hidden');
+                            });
+                        };
+                        
+                        reader.readAsDataURL(file);
+                    }
+                }
         </script>
     @endpush
 </x-app-layout>
