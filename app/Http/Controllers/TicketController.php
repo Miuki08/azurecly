@@ -144,6 +144,22 @@ class TicketController extends Controller
             ->where('site_id', $siteId)
             // ->where('HandlerType', 0)
             ->findOrFail($id);
+        
+        $relatedNews = Ticket::where('site_id', $siteId)
+            ->where('id', '!=', $ticket->id)
+            ->where(function($q) use ($ticket) {
+                $q->where('CategoryId', $ticket->CategoryId)
+                ->orWhere('Priority', $ticket->Priority)
+                ->orWhere(function($q2) use ($ticket) {
+                    if ($ticket->Tag) {
+                        $q2->where('Tag', 'LIKE', "%{$ticket->Tag}%");
+                    }
+                });
+            })
+            ->where('HandlerType', 0)
+            ->orderBy('PublishedDate', 'desc')
+            ->limit(6)
+            ->get();
 
         $contacts = Contact::where('site_id', $siteId)
             ->orderBy('Name')
@@ -151,7 +167,7 @@ class TicketController extends Controller
 
         $ticket->increment('ViewCount');
 
-        return view('tickets.show', compact('ticket', 'contacts'));
+        return view('tickets.show', compact('ticket', 'contacts', 'relatedNews'));
     }
 
     public function edit($id)

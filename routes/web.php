@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Controllers\ProfileFaceController;
+use App\Http\Controllers\TicketPdfController;
 
 /*
 |--------------------------------------------------------------------------
@@ -98,6 +99,8 @@ Route::middleware(['auth', 'role:humas,admin'])->group(function () {
     Route::post('/tickets/{ticket}/escalate', [TicketEscalationController::class, 'store'])->name('tickets.escalate');
     Route::get('/my-escalations', [TicketEscalationController::class, 'myIndexWeb'])
         ->name('escalations.my');
+    Route::get('/tickets/{id}/export-pdf', [TicketPdfController::class, 'export'])->name('tickets.export-pdf');
+
     Route::post('/tickets/{ticket}/visibility', [TicketController::class, 'updateVisibility'])
         ->name('tickets.visibility'); 
 });
