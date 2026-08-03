@@ -11,6 +11,8 @@ use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\TelegramWebhookController;
+use App\Http\Controllers\ProfileFaceController;
+use App\Http\Controllers\TicketPdfController;
 
 /*
 |--------------------------------------------------------------------------
@@ -81,7 +83,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
         ->name('admin.settings.users.store');
     
     Route::get('/escalations', [TicketEscalationController::class, 'indexWeb'])
-        ->name('escalations.index');
+        ->name('escalations.index');    
+    Route::post('/escalations/{escalation}/verify-face', [TicketEscalationController::class, 'verifyFace'])
+        ->name('escalations.verify-face');
 });
 
 Route::middleware(['auth', 'role:humas,admin'])->group(function () {
@@ -95,17 +99,30 @@ Route::middleware(['auth', 'role:humas,admin'])->group(function () {
     Route::post('/tickets/{ticket}/escalate', [TicketEscalationController::class, 'store'])->name('tickets.escalate');
     Route::get('/my-escalations', [TicketEscalationController::class, 'myIndexWeb'])
         ->name('escalations.my');
+    Route::get('/tickets/{id}/export-pdf', [TicketPdfController::class, 'export'])->name('tickets.export-pdf');
+
     Route::post('/tickets/{ticket}/visibility', [TicketController::class, 'updateVisibility'])
         ->name('tickets.visibility'); 
 });
 
-    Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
-        ->name('telegram.webhook');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+    
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])
+        ->name('profile.update-avatar');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->name('profile.destroy');
+
+    Route::post('/profile/face-enroll-local', [ProfileFaceController::class, 'store'])
+        ->name('profile.face-enroll-local');
+
+    Route::post('/profile/face-verify', [ProfileController::class, 'verifyFace'])
+        ->name('profile.face-verify');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -119,5 +136,8 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/api/map-data', [AdminDashboardController::class, 'getMapData'])
     ->middleware(['auth', 'role:admin']);
+    
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
+    ->name('telegram.webhook');
     
 require __DIR__.'/auth.php';
