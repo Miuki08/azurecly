@@ -1,5 +1,12 @@
 @php
     $user = Auth::user();
+    
+    // Helper untuk avatar URL
+    $avatarUrl = $user->avatar_path 
+        ? asset('storage/' . $user->avatar_path) 
+        : null;
+    
+    $avatarInitial = strtoupper(substr($user->name, 0, 1));
 
     // Dashboard aktif untuk semua route dashboard
     $isDashboard = request()->routeIs('dashboard')
@@ -91,9 +98,17 @@
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-lg text-gray-600 bg-white hover:text-sea-blue-600 hover:bg-sea-blue-50 focus:outline-none transition duration-150 ease-in-out">
                             <div class="flex items-center space-x-2">
-                                <div class="w-8 h-8 rounded-full bg-sea-blue-100 flex items-center justify-center">
-                                    <i data-lucide="user" class="w-4 h-4 text-sea-blue-600"></i>
-                                </div>
+                                {{-- Avatar Display --}}
+                                @if($avatarUrl)
+                                    <img src="{{ $avatarUrl }}" 
+                                         alt="{{ $user->name }}"
+                                         class="w-8 h-8 rounded-full object-cover border-2 border-sea-blue-200 shadow-sm">
+                                @else
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-sea-blue-400 to-sea-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                                        {{ $avatarInitial }}
+                                    </div>
+                                @endif
+                                
                                 <span>{{ $user->name }}</span>
                             </div>
                             <div class="ms-2">
@@ -202,9 +217,17 @@
         <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-full bg-sea-blue-100 flex items-center justify-center">
-                        <i data-lucide="user" class="w-5 h-5 text-sea-blue-600"></i>
-                    </div>
+                    {{-- Avatar Display (Mobile) --}}
+                    @if($avatarUrl)
+                        <img src="{{ $avatarUrl }}" 
+                             alt="{{ $user->name }}"
+                             class="w-10 h-10 rounded-full object-cover border-2 border-sea-blue-200 shadow-sm">
+                    @else
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sea-blue-400 to-sea-blue-600 flex items-center justify-center text-white text-base font-bold shadow-sm">
+                            {{ $avatarInitial }}
+                        </div>
+                    @endif
+                    
                     <div>
                         <div class="font-medium text-base text-gray-800">{{ $user->name }}</div>
                         <div class="font-medium text-sm text-gray-500">{{ $user->email }}</div>
@@ -222,7 +245,7 @@
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')" class="flex items-center text-red-600 hover:text-red-700"
-                                            onclick="event.preventDefault(); this.closest('form').submit();">
+                                          onclick="event.preventDefault(); this.closest('form').submit();">
                         <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
                         {{ __('Log Out') }}
                     </x-responsive-nav-link>

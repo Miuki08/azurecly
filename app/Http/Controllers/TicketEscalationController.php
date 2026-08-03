@@ -163,8 +163,8 @@ class TicketEscalationController extends Controller
     }
 
     /**
-    * entry of data and main logic in the escalation process
-    */
+     * Entry of data and main logic in the escalation process
+     */
     public function store(Request $request, Ticket $ticket)
     {
         $user   = Auth::user();
@@ -175,11 +175,24 @@ class TicketEscalationController extends Controller
         }
 
         $data = $request->validate([
-            'channel'    => 'required|in:email,whatsapp,both,telegram',
+            'platforms'  => 'required|string',
             'contact_id' => 'nullable|exists:contacts,id',
             'recipient'  => 'nullable|string|max:255',
             'message'    => 'required|string',
         ]);
+
+        $platforms = json_decode($data['platforms'], true);
+        
+        if (!is_array($platforms) || empty($platforms)) {
+            return back()
+                ->withInput()
+                ->with('error', 'Pilih minimal 1 platform untuk eskalasi');
+        }
+
+        $channel = 'both'; 
+        if (count($platforms) === 1) {
+            $channel = $platforms[0];
+        }
 
         $recipient = $data['recipient'];
 
@@ -189,13 +202,14 @@ class TicketEscalationController extends Controller
                 ->findOrFail($data['contact_id']);
 
             if (!$recipient && $contact) {
-                if ($data['channel'] === 'email') {
+                $primaryPlatform = $platforms[0];
+                if ($primaryPlatform === 'email') {
                     $recipient = $contact->Email;
-                } elseif ($data['channel'] === 'whatsapp') {
+                } elseif ($primaryPlatform === 'whatsapp') {
                     $recipient = $contact->Phone;
-                }elseif ($data['channel'] === 'telegram') {
+                } elseif ($primaryPlatform === 'telegram') {
                     $recipient = $contact->TelegramChatId ?? $contact->TelegramUsername ?? null;
-                } else { 
+                } else {
                     $recipient = $contact->Email ?: $contact->Phone;
                 }
             }
@@ -211,80 +225,86 @@ class TicketEscalationController extends Controller
             'site_id'   => $siteId,
             'TicketId'  => $ticket->id,
             'ContactId' => $contact?->id,
-            'Channel'   => $data['channel'],
+            'Channel'   => $channel,
             'Message'   => $data['message'],
             'Recipient' => $recipient,
             'Status'    => 'pending',
             'Escalated' => Auth::id(),
         ]);
 
-        if (in_array($data['channel'], ['email', 'both'], true)) {
-            try {
-                Mail::to($recipient)->send(new TicketEscalatedMail($ticket, $log));
-
-                $log->update([
-                    'Status'   => 'sent',
-                    'SentDate' => now(),
-                ]);
-            } catch (\Throwable $e) {
-                $log->update([
-                    'Status'   => 'failed',
-                    'Response' => $e->getMessage(),
-                ]);
-
-                return redirect()
-                    ->route('tickets.show', $ticket->id)
-                    ->with('error', 'Eskalasi email gagal dikirim: ' . $e->getMessage());
+        $waRedirect = null;
+        $results = [];
+        
+        foreach ($platforms as $platform) {
+            if ($platform === 'email') {
+                try {
+                    Mail::to($recipient)->send(new TicketEscalatedMail($ticket, $log));
+                    
+                    $results[] = ['success' => true, 'platform' => 'email'];
+                } catch (\Throwable $e) {
+                    $results[] = ['success' => false, 'platform' => 'email', 'error' => $e->getMessage()];
+                }
             }
-        }
-
-        if (in_array($data['channel'], ['whatsapp', 'both'], true)) {
-            $phone = $this->normalizeIDPhone($recipient);
-
-            if (!$phone) {
-                return redirect()
-                    ->route('tickets.show', $ticket->id)
-                    ->with('error', 'Format nomor WhatsApp tidak valid.');
-            }
-
-            $text = $data['message'] . "\n\n" . 'Detail berita: ' . route('tickets.show', $ticket->id);
-            $waUrl = 'https://wa.me/' . $phone . '?text=' . urlencode($text);
-
-            $log->update([
-                'Response' => trim(($log->Response ?? '') . "\nWA URL: " . $waUrl),
-            ]);
-
-            return redirect()->away($waUrl);
-        }
-
-        if (in_array($data['channel'], ['telegram', 'both'], true)) {
-            $result = $this->sendTelegramMessage($recipient, $data['message'], $ticket);
             
-            if ($result['success']) {
-                $log->update([
-                    'Status'   => 'sent',
-                    'SentDate' => now(),
-                    'Response' => trim(($log->Response ?? '') . "\nTelegram Response: " . json_encode($result['response'])),
-                ]);
+            if ($platform === 'whatsapp') {
+                $phone = $this->normalizeIDPhone($recipient);
                 
-                return redirect()
-                    ->route('tickets.show', $ticket->id)
-                    ->with('success', 'Eskalasi Telegram berhasil dikirim.');
-            } else {
-                $log->update([
-                    'Status'   => 'failed',
-                    'Response' => $result['error'],
-                ]);
+                if (!$phone) {
+                    $results[] = ['success' => false, 'platform' => 'whatsapp', 'error' => 'Format nomor WhatsApp tidak valid'];
+                    continue;
+                }
                 
-                return redirect()
-                    ->route('tickets.show', $ticket->id)
-                    ->with('error', 'Eskalasi Telegram gagal dikirim: ' . $result['error']);
+                $text = $data['message'] . "\n\n" . 'Detail berita: ' . route('tickets.show', $ticket->id);
+                $waUrl = 'https://wa.me/' . $phone . '?text=' . urlencode($text);
+                
+                $waRedirect = $waUrl;
+                $results[] = ['success' => true, 'platform' => 'whatsapp'];
+            }
+            
+            if ($platform === 'telegram') {
+                $result = $this->sendTelegramMessage($recipient, $data['message'], $ticket);
+                $results[] = $result;
             }
         }
+
+        $failed = array_filter($results, fn($r) => !$r['success']);
+        $success = array_filter($results, fn($r) => $r['success']);
+        
+        if (count($success) > 0) {
+            $log->update([
+                'Status' => count($failed) > 0 ? 'sent' : 'sent',
+                'SentDate' => now(),
+                'Response' => 'Sent to: ' . implode(', ', array_column(array_filter($results, fn($r) => $r['success']), 'platform')),
+            ]);
+        }
+        
+        if (count($failed) > 0) {
+            $log->update([
+                'Status' => count($success) > 0 ? 'sent' : 'failed',
+                'Response' => 'Failed: ' . json_encode($failed),
+            ]);
+        }
+
+        if (!empty($failed)) {
+            return redirect()
+                ->route('tickets.show', $ticket->id)
+                ->with('error', 'Beberapa eskalasi gagal: ' . json_encode($failed));
+        }
+
+        if ($waRedirect) {
+            return redirect()->away($waRedirect);
+        }
+
+            // dd([
+            //     'request_data' => $data,
+            //     'platforms' => $platforms,
+            //     'recipient' => $recipient,
+            //     'channel' => $channel,
+            // ]);
 
         return redirect()
             ->route('tickets.show', $ticket->id)
-            ->with('success', 'Eskalasi berita berhasil dikirim.');
+            ->with('success', 'Eskalasi berhasil dikirim ke ' . implode(', ', $platforms));
     }
 
     /**
